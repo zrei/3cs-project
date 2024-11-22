@@ -5,7 +5,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
-// make a note about input components and setup input component
 void AMyPlayerController::SetupInputComponent()
 {
 	// parent
@@ -29,7 +28,6 @@ void AMyPlayerController::SetupInputComponent()
 
 void AMyPlayerController::CharacterMove(const FInputActionInstance& Instance)
 {
-	// execute if bound??? uh
 	// unwrap wrapping and get the vector 2d value, and fire the delegate
 	UE_LOG(LogTemp, Warning, TEXT("Character movement from controller"));
 	OnCharacterMovement.Broadcast(Instance.GetValue().Get<FVector2D>());

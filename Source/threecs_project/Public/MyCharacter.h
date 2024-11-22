@@ -7,6 +7,15 @@
 #include "Camera/CameraComponent.h"
 #include "MyCharacter.generated.h"
 
+/*
+Camera positioning handled by spring arm, might need to turn off the rotation
+inheritance later. Horizontal camera rotation is handled by rotating the overall
+camera parent, vertical camera rotation by rotating the springarm.
+
+Maximum vertical camera rotation is capped.
+
+Still need to handle delta time?
+*/
 UCLASS()
 class THREECS_PROJECT_API AMyCharacter : public ACharacter
 {
@@ -22,20 +31,23 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	class UCameraComponent* Camera;
 
-	UPROPERTY(EditAnywhere)
-	class USceneComponent* CameraLookPoint;
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	class USpringArmComponent* CameraSpringArm;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector CameraOffset;
+	class USceneComponent* CameraParent;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float VerticalRotationalSpeed;
+	float MinDownwardsAngle;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float HorizontalRotationalSpeed;
+	float MaxUpwardsAngle;
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float RotationalSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float MovementSpeed;
@@ -55,4 +67,6 @@ private:
 	FDelegateHandle CharacterMovementHandle;
 
 	FDelegateHandle CameraMovementHandle;
+
+	float CurrVerticalAngle;
 };
