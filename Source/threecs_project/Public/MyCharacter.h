@@ -8,13 +8,13 @@
 #include "MyCharacter.generated.h"
 
 /*
-Camera positioning handled by spring arm, might need to turn off the rotation
-inheritance later. Horizontal camera rotation is handled by rotating the overall
-camera parent, vertical camera rotation by rotating the springarm.
+Camera positioning handled by spring arm using absolute rotation to make it independent
+of character rotation. View direction when moving directly uses the stored horizontal
+angle and also rotates the character.
 
 Maximum vertical camera rotation is capped.
 
-Still need to handle delta time?
+TODO: Delta time + lerp character rotation
 */
 UCLASS()
 class THREECS_PROJECT_API AMyCharacter : public ACharacter
@@ -69,4 +69,6 @@ private:
 	FDelegateHandle CameraMovementHandle;
 
 	float CurrVerticalAngle;
+
+	float CurrHorizontalAngle;
 };

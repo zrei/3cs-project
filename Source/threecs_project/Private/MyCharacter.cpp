@@ -34,6 +34,7 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	CurrVerticalAngle = 0;
+	CurrHorizontalAngle = 0;
 	
 	// cast to my player controller
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
@@ -59,7 +60,6 @@ void AMyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -71,8 +71,9 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AMyCharacter::OnCharacterMovement(FVector2D movementVector)
 {
-	AddMovementInput(CameraParent->GetForwardVector(), movementVector.Y * MovementSpeed);
-	AddMovementInput(CameraParent->GetRightVector(), movementVector.X * MovementSpeed);
+	SetActorRotation({0, CurrHorizontalAngle, 0});
+	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }), movementVector.Y * MovementSpeed);
+	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }), movementVector.X * MovementSpeed);
 	UE_LOGFMT(LogTemp, Warning, "Movement Vector: {0}, {1}", movementVector.X, movementVector.Y);
 }
 
@@ -83,12 +84,23 @@ void AMyCharacter::OnCameraMovement(FVector2D cameraVector)
 	// recalculate vertical angle
 	CurrVerticalAngle = FMath::Clamp(CurrVerticalAngle + cameraVector.Y * RotationalSpeed, MinDownwardsAngle, MaxUpwardsAngle);
 	UE_LOGFMT(LogTemp, Warning, "vertical angle: {0}", CurrVerticalAngle);
+
+	CurrHorizontalAngle += cameraVector.X * RotationalSpeed;
+	if (CurrHorizontalAngle > 360)
+	{
+		CurrHorizontalAngle -= 360;
+	}
+	else if (CurrHorizontalAngle < 0)
+	{
+		CurrHorizontalAngle = 360 - CurrHorizontalAngle;
+	}
 	
 	// rotate the spring arm relative to the parent
-	CameraSpringArm->SetRelativeRotation(FQuat::MakeFromRotator(FRotator{ CurrVerticalAngle, 0, 0 }));
-	
+	CameraSpringArm->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ CurrVerticalAngle, CurrHorizontalAngle, 0 }));
+	AddControllerYawInput(cameraVector.X * RotationalSpeed);
+	//CameraSpringArm->AddWorldRotation(FQuat::MakeFromRotator(FRotator{ 0, cameraVector.X/* * RotationalSpeed*/, 0 }));
 	// horizontally rotate the camera parent to rotate the entire setup
 	// can be replaced by rotating the spring arm relative to the z axis, or the world-z axis
-	CameraParent->AddLocalRotation(FQuat::MakeFromRotator(FRotator{ 0, cameraVector.X * RotationalSpeed, 0 }));
+	//CameraParent->AddLocalRotation(FQuat::MakeFromRotator(FRotator{ 0, cameraVector.X * RotationalSpeed, 0 }));
 }
 

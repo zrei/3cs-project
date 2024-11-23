@@ -17,7 +17,7 @@ Possible to move the entire camera to the camera manager.
 
 Maximum vertical camera rotation is capped.
 
-Still need to handle delta time?
+TODO: Delta time, make rotation absolute, set character rotation
 */
 UCLASS()
 class THREECS_PROJECT_API AMyCharacter_NoSpringarm : public ACharacter
