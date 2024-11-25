@@ -35,10 +35,11 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	class UCameraComponent* Camera;
+	TObjectPtr<class UCameraComponent> Camera;
 
+	// making it a TObjectPtr to follow Unreal's recommendation
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	class USceneComponent* CameraParent;
+	TObjectPtr<class USceneComponent> CameraParent;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinDownwardsAngle;
@@ -72,4 +73,6 @@ private:
 	FDelegateHandle CameraMovementHandle;
 
 	float CurrVerticalAngle;
+
+	float CurrHorizontalAngle;
 };

@@ -31,6 +31,7 @@ void AMyCharacter_NoSpringarm::BeginPlay()
 	Super::BeginPlay();
 
 	CurrVerticalAngle = 0;
+	CurrHorizontalAngle = 0;
 
 	// cast to my player controller
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
@@ -38,8 +39,12 @@ void AMyCharacter_NoSpringarm::BeginPlay()
 	CharacterMovementHandle = controller->OnCharacterMovement.AddUObject(this, &AMyCharacter_NoSpringarm::OnCharacterMovement);
 	CameraMovementHandle = controller->OnCameraMovement.AddUObject(this, &AMyCharacter_NoSpringarm::OnCameraMovement);
 	
+	// rotate the camera offset vector to get the new vertical position of the camera // TODO: Perform only a single rotation?
+	Camera->SetWorldLocation(CameraParent->GetComponentLocation() + CameraOffset.RotateAngleAxis(CurrVerticalAngle, { 0, 1, 0 }).RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }));
+	// rotate the camera itself so that it aligns with the vector
+	Camera->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ -CurrVerticalAngle, CurrHorizontalAngle, 0 }));
 	// offset the camera to its original offset position
-	Camera->SetRelativeLocation(CameraOffset, false);
+	//Camera->SetRelativeLocation(CameraOffset, false);
 }
 
 // Called every frame
@@ -47,6 +52,11 @@ void AMyCharacter_NoSpringarm::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// have to continually update the cameera position and rotation, otherwise it will be affected by the character rotation
+	// rotate the camera offset vector to get the new vertical position of the camera // TODO: Perform only a single rotation?
+	Camera->SetWorldLocation(CameraParent->GetComponentLocation() + CameraOffset.RotateAngleAxis(CurrVerticalAngle, { 0, 1, 0 }).RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }));
+	// rotate the camera itself so that it aligns with the vector
+	Camera->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ -CurrVerticalAngle, CurrHorizontalAngle, 0 }));
 }
 
 // Called to bind functionality to input
@@ -58,8 +68,9 @@ void AMyCharacter_NoSpringarm::SetupPlayerInputComponent(UInputComponent* Player
 
 void AMyCharacter_NoSpringarm::OnCharacterMovement(FVector2D movementVector)
 {
-	AddMovementInput(CameraParent->GetForwardVector(), movementVector.Y * MovementSpeed);
-	AddMovementInput(CameraParent->GetRightVector(), movementVector.X * MovementSpeed);
+	SetActorRotation({ 0, CurrHorizontalAngle, 0 });
+	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }), movementVector.Y * MovementSpeed);
+	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrHorizontalAngle, { 0, 0, 1 }), movementVector.X * MovementSpeed);
 	UE_LOG(LogTemp, Warning, TEXT("Character move"));
 	UE_LOGFMT(LogTemp, Warning, "Movement Vector: {0}, {1}", movementVector.X, movementVector.Y);
 }
@@ -70,15 +81,18 @@ void AMyCharacter_NoSpringarm::OnCameraMovement(FVector2D cameraVector)
 	
 	CurrVerticalAngle = FMath::Clamp(CurrVerticalAngle + cameraVector.Y * RotationalSpeed, MinDownwardsAngle, MaxUpwardsAngle);
 	UE_LOGFMT(LogTemp, Warning, "Vertical angle: {0}", CurrVerticalAngle);
-	
-	// Possible: Use absolutes instead
-	// rotate the camera offset vector to get the new vertical position of the camera
-	Camera->SetRelativeLocation(CameraOffset.RotateAngleAxis(CurrVerticalAngle, { 0, 1, 0 }));
-	// rotate the camera itself so that it aligns with the vector
-	Camera->SetRelativeRotation(FQuat::MakeFromRotator(FRotator{ -CurrVerticalAngle, 0, 0 }));
 
+	CurrHorizontalAngle += cameraVector.X * RotationalSpeed;
+	if (CurrHorizontalAngle > 360)
+	{
+		CurrHorizontalAngle -= 360;
+	}
+	else if (CurrHorizontalAngle < 0)
+	{
+		CurrHorizontalAngle = 360 + CurrHorizontalAngle;
+	}
 	
-	CameraParent->AddLocalRotation(FQuat::MakeFromRotator(FRotator{ 0, cameraVector.X * RotationalSpeed, 0 }));
+	//CameraParent->AddLocalRotation(FQuat::MakeFromRotator(FRotator{ 0, cameraVector.X * RotationalSpeed, 0 }));
 }
 
 void AMyCharacter_NoSpringarm::EndPlay(const EEndPlayReason::Type EndPlayReason)

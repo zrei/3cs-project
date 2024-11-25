@@ -32,13 +32,13 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	class UCameraComponent* Camera;
+	TObjectPtr<class UCameraComponent> Camera;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	class USpringArmComponent* CameraSpringArm;
+	TObjectPtr<class USpringArmComponent> CameraSpringArm;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	class USceneComponent* CameraParent;
+	TObjectPtr<class USceneComponent> CameraParent;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinDownwardsAngle;
@@ -51,6 +51,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float MovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float PlayerRotationalSpeed;
 
 public:	
 	// Called every frame
@@ -70,5 +73,7 @@ private:
 
 	float CurrVerticalAngle;
 
-	float CurrHorizontalAngle;
+	float CurrCharacterHorizontalAngle;
+
+	float CurrViewHorizontalAngle;
 };
