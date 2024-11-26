@@ -5,23 +5,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
-#include "MyCharacter.generated.h"
+#include "Base_MyCharacter.generated.h"
 
-/*
-Camera positioning handled by spring arm using absolute rotation to make it independent
-of character rotation. View direction when moving directly uses the stored horizontal
-angle and also lerps the character rotation towards the view direction.
-
-Vertical camera rotation is capped with a minimum and maximum.
-*/
 UCLASS()
-class THREECS_PROJECT_API AMyCharacter : public ACharacter
+class THREECS_PROJECT_API ABase_MyCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AMyCharacter();
+	ABase_MyCharacter();
 
 protected:
 	// Called when the game starts or when spawned
@@ -32,9 +25,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<class UCameraComponent> Camera;
 
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	TObjectPtr<class USpringArmComponent> CameraSpringArm;
-
+	// making it a TObjectPtr to follow Unreal's recommendation
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<class USceneComponent> CameraParent;
 
@@ -63,7 +54,7 @@ public:
 private:
 	void OnCharacterMovement(FVector2D movementVector);
 
-	void OnCameraMovement(FVector2D cameraVector);
+	virtual void OnCameraMovement(FVector2D cameraVector);
 
 	FDelegateHandle CharacterMovementHandle;
 

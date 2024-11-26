@@ -8,16 +8,15 @@
 #include "MyCharacter_NoSpringarm.generated.h"
 
 /*
-Camera positioning handled internally, still affected by pawn rotation atm.
-Horizontal camera rotation is handled by rotating the overall
-camera parent, vertical camera rotation by rotating the initial offset vector
-and setting the distance + rotating the camera itself.
+Camera positioning handled internally - absolute rotation and location \
+are set every tick to make it independent of character rotation.
+
+View direction when moving directly uses the stored horizontal
+angle and also lerps the character rotation towards the view direction.
+
+Vertical camera rotation is capped with a minimum and maximum.
 
 Possible to move the entire camera to the camera manager.
-
-Maximum vertical camera rotation is capped.
-
-TODO: Delta time, make rotation absolute, set character rotation
 */
 UCLASS()
 class THREECS_PROJECT_API AMyCharacter_NoSpringarm : public ACharacter
@@ -42,19 +41,23 @@ protected:
 	TObjectPtr<class USceneComponent> CameraParent;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MinDownwardsAngle;
+	float MinViewVerticalAngle;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MaxUpwardsAngle;
+	float MaxViewVerticalAngle;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	float RotationalSpeed;
+	float CameraRotationalSpeed;
+
+	// TODO: Socket offset
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FVector CameraLocationOffset;
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float MovementSpeed;
-
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	FVector CameraOffset;
+	float CharacterMovementSpeed;
+	
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterRotationalSpeed;
 
 public:
 	// Called every frame
@@ -72,7 +75,11 @@ private:
 
 	FDelegateHandle CameraMovementHandle;
 
-	float CurrVerticalAngle;
+	float CurrCharacterHorizontalAngle;
 
-	float CurrHorizontalAngle;
+	float TargetCharacterHorizontalAngle;
+
+	float CurrViewVerticalAngle;
+
+	float CurrViewHorizontalAngle;
 };
