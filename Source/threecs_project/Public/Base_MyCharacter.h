@@ -7,7 +7,14 @@
 #include "Camera/CameraComponent.h"
 #include "Base_MyCharacter.generated.h"
 
-UCLASS()
+/*
+View direction is calculated and stored whenever the camera is adjusted.
+Movement moves in the character's current facing direction while lerping
+it towards the view direction.
+
+Vertical view direction is capped with a minimum and maximum angle.
+*/
+UCLASS(Abstract)
 class THREECS_PROJECT_API ABase_MyCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -22,12 +29,27 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	virtual void SetCameraRotation();
+
+	virtual void OnCameraMovement(FVector2D cameraVector);
+
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<class UCameraComponent> Camera;
 
 	// making it a TObjectPtr to follow Unreal's recommendation
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<class USceneComponent> CameraParent;
+
+	float CurrViewVerticalAngle;
+
+	float CurrViewHorizontalAngle;
+
+private:
+	void OnCharacterMovement(FVector2D movementVector);
+
+	FDelegateHandle CharacterMovementHandle;
+
+	FDelegateHandle CameraMovementHandle;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinViewVerticalAngle;
@@ -44,27 +66,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float CharacterRotationalSpeed;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-private:
-	void OnCharacterMovement(FVector2D movementVector);
-
-	virtual void OnCameraMovement(FVector2D cameraVector);
-
-	FDelegateHandle CharacterMovementHandle;
-
-	FDelegateHandle CameraMovementHandle;
-
 	float CurrCharacterHorizontalAngle;
 
 	float TargetCharacterHorizontalAngle;
-
-	float CurrViewVerticalAngle;
-
-	float CurrViewHorizontalAngle;
 };

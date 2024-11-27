@@ -9,17 +9,19 @@ ABase_MyCharacter::ABase_MyCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bUseControllerRotationYaw = false;
 
 	CameraParent = CreateDefaultSubobject<USceneComponent>(TEXT("Camera Parent"));
 	CameraParent->SetupAttachment(RootComponent);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(CameraParent);
 
 	CameraRotationalSpeed = 2;
 	MaxViewVerticalAngle = 30;
 	MinViewVerticalAngle = -60;
 
-	CharacterRotationalSpeed = 0.5;
+	CharacterRotationalSpeed = 1;
 	CharacterMovementSpeed = 1;
 }
 
@@ -57,23 +59,13 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-// Called every frame
-void ABase_MyCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-// Called to bind functionality to input
-void ABase_MyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
 void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
 {
 	// lerp the rotation of the character towards the target horizontal angle
+	// Can also be achieved by either setting the control rotation of the controller and setting
+	// bUseControllerDesiredRotation to true
+	// OR setting bOrientRotationToMovement to true
+	// TODO: Handle small differences?
 	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 	{
 		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - CharacterRotationalSpeed, TargetCharacterHorizontalAngle);
@@ -84,18 +76,17 @@ void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
 	}
 	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 
-	// perform movement in the view direction
+	// perform movement in the character's view direction
 	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.Y * CharacterMovementSpeed);
 	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.X * CharacterMovementSpeed);
 }
 
-
 void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
 {
-	// recalculate vertical angle
+	// recalculate view vertical angle
 	CurrViewVerticalAngle = FMath::Clamp(CurrViewVerticalAngle + cameraVector.Y * CameraRotationalSpeed, MinViewVerticalAngle, MaxViewVerticalAngle);
 
-	// recalculate horizontal angle
+	// recalculate view horizontal angle
 	CurrViewHorizontalAngle += cameraVector.X * CameraRotationalSpeed;
 	if (CurrViewHorizontalAngle >= 360)
 	{
@@ -106,10 +97,17 @@ void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
 		CurrViewHorizontalAngle = 360 + CurrViewHorizontalAngle;
 	}
 
-	// calculate target character horizontal angle
+	// calculate target character horizontal angle, setting the rotation direction (clockwise
+	// or anti-clockwise) based on the angle
 	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
 	if (FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > 180)
 	{
 		TargetCharacterHorizontalAngle = -(360 - TargetCharacterHorizontalAngle);
 	}
+}
+
+void ABase_MyCharacter::SetCameraRotation()
+{
+	// Can't make an abstract function in a UCLASS, so putting this log here
+	UE_LOG(LogScript, Fatal, TEXT("This shouldn't be called"));
 }
