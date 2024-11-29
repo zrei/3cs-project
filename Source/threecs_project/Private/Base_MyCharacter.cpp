@@ -32,40 +32,33 @@ void ABase_MyCharacter::BeginPlay()
 
 	CurrViewVerticalAngle = 0;
 
-	// set initial view angle based on initial actor rotation
 	CurrViewHorizontalAngle = GetActorRotation().Yaw;
 	CurrCharacterHorizontalAngle = CurrViewHorizontalAngle;
 	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
 
-	// cast to my player controller
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	// subscribe to input events
-	CharacterMovementHandle = controller->OnCharacterMovement.AddUObject(this, &ABase_MyCharacter::OnCharacterMovement);
-	CameraMovementHandle = controller->OnCameraMovement.AddUObject(this, &ABase_MyCharacter::OnCameraMovement);
+	controller->OnCharacterMovement.AddUObject(this, &ABase_MyCharacter::OnCharacterMovement);
+	controller->OnCameraMovement.AddUObject(this, &ABase_MyCharacter::OnCameraMovement);
+
+	SetCameraRotation();
 }
 
 void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	// cast to my player controller
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	// due to execution order the controller may no longer exist
 	if (controller)
 	{
-		// unsubscribe from input events
-		controller->OnCharacterMovement.Remove(CharacterMovementHandle);
-		controller->OnCameraMovement.Remove(CameraMovementHandle);
+		controller->OnCharacterMovement.RemoveAll(this);
+		controller->OnCameraMovement.RemoveAll(this);
 	}
 }
 
 void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
 {
 	// lerp the rotation of the character towards the target horizontal angle
-	// Can also be achieved by either setting the control rotation of the controller and setting
-	// bUseControllerDesiredRotation to true
-	// OR setting bOrientRotationToMovement to true
-	// TODO: Handle small differences?
+	// TODO: Handle small differences and large differences
 	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 	{
 		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - CharacterRotationalSpeed, TargetCharacterHorizontalAngle);
@@ -76,38 +69,20 @@ void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
 	}
 	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 
-	// perform movement in the character's view direction
 	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.Y * CharacterMovementSpeed);
 	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.X * CharacterMovementSpeed);
 }
 
 void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
 {
-	// recalculate view vertical angle
-	CurrViewVerticalAngle = FMath::Clamp(CurrViewVerticalAngle + cameraVector.Y * CameraRotationalSpeed, MinViewVerticalAngle, MaxViewVerticalAngle);
-
-	// recalculate view horizontal angle
-	CurrViewHorizontalAngle += cameraVector.X * CameraRotationalSpeed;
-	if (CurrViewHorizontalAngle >= 360)
-	{
-		CurrViewHorizontalAngle -= 360;
-	}
-	else if (CurrViewHorizontalAngle < 0)
-	{
-		CurrViewHorizontalAngle = 360 + CurrViewHorizontalAngle;
-	}
-
-	// calculate target character horizontal angle, setting the rotation direction (clockwise
-	// or anti-clockwise) based on the angle
-	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
+	CurrViewVerticalAngle = FMath::ClampAngle(CurrViewVerticalAngle + cameraVector.Y * CameraRotationalSpeed, MinViewVerticalAngle, MaxViewVerticalAngle);
+	CurrViewHorizontalAngle = FMath::ClampAngle(CurrViewHorizontalAngle + cameraVector.X * CameraRotationalSpeed, 0, 359.9);
+	
+	// set target character horizontal angle to be from 0 - 360
+	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle < 0 ? 360 + CurrViewHorizontalAngle : CurrViewHorizontalAngle;
+	// reverse the direction if the angle > 180
 	if (FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > 180)
 	{
 		TargetCharacterHorizontalAngle = -(360 - TargetCharacterHorizontalAngle);
 	}
-}
-
-void ABase_MyCharacter::SetCameraRotation()
-{
-	// Can't make an abstract function in a UCLASS, so putting this log here
-	UE_LOG(LogScript, Fatal, TEXT("This shouldn't be called"));
 }

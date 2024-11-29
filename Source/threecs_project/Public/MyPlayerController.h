@@ -2,6 +2,9 @@
 
 #pragma once
 
+class UInputMappingContext;
+class UInputAction;
+
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "InputMappingContext.h"
@@ -19,16 +22,16 @@ class THREECS_PROJECT_API AMyPlayerController : public APlayerController
 	
 private:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
-	class UInputMappingContext* CharacterMovementInputMapping;
+	UInputMappingContext* CharacterMovementInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
-	class UInputMappingContext* CameraInputMapping;
+	UInputMappingContext* CameraInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
-	class UInputAction* CharacterMovementInputAction;
+	UInputAction* CharacterMovementInputAction;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
-	class UInputAction* CameraInputAction;
+	UInputAction* CameraInputAction;
 
 	void CharacterMove(const FInputActionInstance& Instance);
 
@@ -39,7 +42,5 @@ public:
 
 	FVector2Delegate OnCameraMovement;
 
-	// this is called by any player controller and sets up the default input component
-	// that already exists
 	virtual void SetupInputComponent() override;
 };

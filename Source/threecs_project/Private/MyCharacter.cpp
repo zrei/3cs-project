@@ -14,15 +14,6 @@ AMyCharacter::AMyCharacter()
 	Camera->SetupAttachment(CameraSpringArm);
 }
 
-// Called when the game starts or when spawned
-void AMyCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// set initial camera rotation
-	SetCameraRotation();
-}
-
 void AMyCharacter::OnCameraMovement(FVector2D cameraVector)
 {	
 	Super::OnCameraMovement(cameraVector);
@@ -32,6 +23,5 @@ void AMyCharacter::OnCameraMovement(FVector2D cameraVector)
 
 void AMyCharacter::SetCameraRotation()
 {
-	// rotate the spring arm in world space according to the vertical and horizontal view angle
 	CameraSpringArm->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ CurrViewVerticalAngle, CurrViewHorizontalAngle, 0 }));
 }

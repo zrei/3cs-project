@@ -2,6 +2,9 @@
 
 #pragma once
 
+class UCameraComponent;
+class USceneComponent;
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
@@ -29,16 +32,16 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	virtual void SetCameraRotation();
+	virtual void SetCameraRotation() PURE_VIRTUAL(ABase_MyCharacter::SetCameraRotation)
 
 	virtual void OnCameraMovement(FVector2D cameraVector);
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	TObjectPtr<class UCameraComponent> Camera;
+	TObjectPtr<UCameraComponent> Camera;
 
 	// making it a TObjectPtr to follow Unreal's recommendation
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	TObjectPtr<class USceneComponent> CameraParent;
+	TObjectPtr<USceneComponent> CameraParent;
 
 	float CurrViewVerticalAngle;
 
@@ -46,10 +49,6 @@ protected:
 
 private:
 	void OnCharacterMovement(FVector2D movementVector);
-
-	FDelegateHandle CharacterMovementHandle;
-
-	FDelegateHandle CameraMovementHandle;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinViewVerticalAngle;

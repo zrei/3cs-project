@@ -2,6 +2,8 @@
 
 #pragma once
 
+class USpringArmComponent;
+
 #include "CoreMinimal.h"
 #include "threecs_project/Public/Base_MyCharacter.h"
 #include "MyCharacter.generated.h"
@@ -20,13 +22,10 @@ public:
 	AMyCharacter();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
 	virtual void OnCameraMovement(FVector2D cameraVector) override;
 
 	virtual void SetCameraRotation() override;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	TObjectPtr<class USpringArmComponent> CameraSpringArm;
+	TObjectPtr<USpringArmComponent> CameraSpringArm;
 };
