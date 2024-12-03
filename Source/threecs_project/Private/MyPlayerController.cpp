@@ -21,6 +21,7 @@ void AMyPlayerController::SetupInputComponent()
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent);
 	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CharacterMove);
 	Input->BindAction(CameraInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CameraMove);
+	Input->BindAction(CharacterGaitChangeInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::GaitChange);
 }
 
 void AMyPlayerController::CharacterMove(const FInputActionInstance& Instance)
@@ -31,4 +32,9 @@ void AMyPlayerController::CharacterMove(const FInputActionInstance& Instance)
 void AMyPlayerController::CameraMove(const FInputActionInstance& Instance)
 {
 	OnCameraMovement.Broadcast(Instance.GetValue().Get<FVector2D>());
+}
+
+void AMyPlayerController::GaitChange(const FInputActionInstance& Instance)
+{
+	OnGaitChange.Broadcast(Instance.GetValue().Get<bool>());
 }

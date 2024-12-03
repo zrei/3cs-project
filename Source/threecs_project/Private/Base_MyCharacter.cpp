@@ -22,13 +22,16 @@ ABase_MyCharacter::ABase_MyCharacter()
 	MinViewVerticalAngle = -60;
 
 	CharacterRotationalSpeed = 1;
-	CharacterMovementSpeed = 1;
+	CharacterWalkMovementSpeed = 0.5;
+	CharacterRunMovementSpeed = 1;
 }
 
 // Called when the game starts or when spawned
 void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	IsRunning = false;
 
 	CurrViewVerticalAngle = 0;
 
@@ -40,6 +43,7 @@ void ABase_MyCharacter::BeginPlay()
 
 	controller->OnCharacterMovement.AddUObject(this, &ABase_MyCharacter::OnCharacterMovement);
 	controller->OnCameraMovement.AddUObject(this, &ABase_MyCharacter::OnCameraMovement);
+	controller->OnGaitChange.AddUObject(this, &ABase_MyCharacter::OnGaitChange);
 
 	SetCameraRotation();
 }
@@ -52,6 +56,7 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		controller->OnCharacterMovement.RemoveAll(this);
 		controller->OnCameraMovement.RemoveAll(this);
+		controller->OnGaitChange.RemoveAll(this);
 	}
 }
 
@@ -69,8 +74,9 @@ void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
 	}
 	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 
-	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.Y * CharacterMovementSpeed);
-	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.X * CharacterMovementSpeed);
+	float currMovementSpeed = IsRunning ? CharacterRunMovementSpeed : CharacterWalkMovementSpeed;
+	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.Y * currMovementSpeed);
+	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.X * currMovementSpeed);
 }
 
 void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
@@ -85,4 +91,9 @@ void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
 	{
 		TargetCharacterHorizontalAngle = -(360 - TargetCharacterHorizontalAngle);
 	}
+}
+
+void ABase_MyCharacter::OnGaitChange(bool _)
+{
+	IsRunning = !IsRunning;
 }

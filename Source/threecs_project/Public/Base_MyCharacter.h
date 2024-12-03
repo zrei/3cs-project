@@ -50,6 +50,8 @@ protected:
 private:
 	void OnCharacterMovement(FVector2D movementVector);
 
+	void OnGaitChange(bool _);
+
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinViewVerticalAngle;
 
@@ -60,7 +62,10 @@ private:
 	float CameraRotationalSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterMovementSpeed;
+	float CharacterWalkMovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterRunMovementSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float CharacterRotationalSpeed;
@@ -68,4 +73,6 @@ private:
 	float CurrCharacterHorizontalAngle;
 
 	float TargetCharacterHorizontalAngle;
+
+	bool IsRunning;
 };

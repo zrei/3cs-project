@@ -11,6 +11,7 @@ class UInputAction;
 #include "MyPlayerController.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FVector2Delegate, FVector2D);
+DECLARE_MULTICAST_DELEGATE_OneParam(FBoolDelegate, bool);
 
 /**
  * 
@@ -30,6 +31,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
 	UInputAction* CharacterMovementInputAction;
 
+	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
+	UInputAction* CharacterGaitChangeInputAction;
+
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
 	UInputAction* CameraInputAction;
 
@@ -37,10 +41,14 @@ private:
 
 	void CameraMove(const FInputActionInstance& Instance);
 
+	void GaitChange(const FInputActionInstance& Instance);
+
 public:
 	FVector2Delegate OnCharacterMovement;
 
 	FVector2Delegate OnCameraMovement;
+
+	FBoolDelegate OnGaitChange;
 
 	virtual void SetupInputComponent() override;
 };
