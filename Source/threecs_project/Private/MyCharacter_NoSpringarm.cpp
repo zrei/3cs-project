@@ -12,14 +12,6 @@ AMyCharacter_NoSpringarm::AMyCharacter_NoSpringarm()
 	CameraLocationOffset = { -250, 0, 0 };
 }
 
-// Called every frame
-void AMyCharacter_NoSpringarm::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	SetCameraRotation();
-}
-
 void AMyCharacter_NoSpringarm::SetCameraRotation()
 {
 	// TODO: Perform only a single rotation?
