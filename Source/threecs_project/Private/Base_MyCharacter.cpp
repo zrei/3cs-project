@@ -23,7 +23,7 @@ ABase_MyCharacter::ABase_MyCharacter()
 	MinViewVerticalAngle = -60;
 
 	CharacterRotationalSpeed = 4;
-	FastCharacterRotationalSpeed = 10;
+	FastCharacterRotationalSpeed = 30;
 	FastRotationThreshold = 30;
 
 	CharacterMovementSpeedChange = 2;
@@ -154,13 +154,14 @@ void ABase_MyCharacter::SetCharacterRotation(float deltaTime)
 {
 	// lerp the rotation of the character towards the target horizontal angle
 	// TODO: Handle small differences and large differences
+	float rotationSpeed = FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > FastRotationThreshold ? FastCharacterRotationalSpeed : CharacterRotationalSpeed;
 	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 	{
-		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - CharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - rotationSpeed * deltaTime, TargetCharacterHorizontalAngle);
 	}
 	else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
 	{
-		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + CharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + rotationSpeed * deltaTime, TargetCharacterHorizontalAngle);
 	}
 	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 }
