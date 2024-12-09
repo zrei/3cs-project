@@ -22,8 +22,6 @@ public:
 	AMyCharacter();
 
 protected:
-	virtual void OnCameraMovement(FVector2D cameraVector) override;
-
 	virtual void SetCameraRotation() override;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
