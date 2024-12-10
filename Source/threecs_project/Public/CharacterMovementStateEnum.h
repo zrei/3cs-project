@@ -9,6 +9,6 @@
 UENUM()
 enum class ECharacterMovementState : uint8
 {
-	VE_IDLE UMETA(DisplayName="Idle"),
-	VE_MOVING UMETA(DisplayName="Moving")
+	IDLE UMETA(DisplayName="Idle"),
+	MOVING UMETA(DisplayName="Moving")
 };

@@ -20,54 +20,57 @@ void AMyPlayerController::SetupInputComponent()
 
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent);
 
-	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Started, this, &AMyPlayerController::CharacterMovementStarted);
-	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CharacterMove);
-	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::CharacterMovementComplete);
+	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Started, this, &AMyPlayerController::CharacterMovementInputStarted);
+	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CharacterMovementInputTriggered);
+	Input->BindAction(CharacterMovementInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::CharacterMovementInputComplete);
 	
-	Input->BindAction(CameraInputAction, ETriggerEvent::Started, this, &AMyPlayerController::CameraMovementStarted);
-	Input->BindAction(CameraInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CameraMove);
-	Input->BindAction(CameraInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::CameraMovementComplete);
+	Input->BindAction(CameraInputAction, ETriggerEvent::Started, this, &AMyPlayerController::CameraMovementInputStarted);
+	Input->BindAction(CameraInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CameraMovementInputTriggered);
+	Input->BindAction(CameraInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::CameraMovementInputComplete);
 	
-	Input->BindAction(CharacterGaitChangeInputAction, ETriggerEvent::Started, this, &AMyPlayerController::GaitChange);
+	Input->BindAction(CharacterGaitChangeInputAction, ETriggerEvent::Started, this, &AMyPlayerController::GaitChangeInputStarted);
 }
 
 #pragma region Character Movement
-void AMyPlayerController::CharacterMovementStarted(const FInputActionInstance& Instance)
+void AMyPlayerController::CharacterMovementInputStarted(const FInputActionInstance& Instance)
 {
-	OnCharacterMovementStarted.Broadcast();
+	OnCharacterMovementInputStarted.Broadcast();
 }
 
-void AMyPlayerController::CharacterMove(const FInputActionInstance& Instance)
+void AMyPlayerController::CharacterMovementInputTriggered(const FInputActionInstance& Instance)
 {
-	OnCharacterMovement.Broadcast(Instance.GetValue().Get<FVector2D>());
+	const FVector2D& movementInput = Instance.GetValue().Get<FVector2D>();
+	const FVector2D normalisedMovementInput = movementInput.GetSafeNormal();
+	OnCharacterMovementInputTriggered.Broadcast(normalisedMovementInput);
 }
 
-void AMyPlayerController::CharacterMovementComplete(const FInputActionInstance& Instance)
+void AMyPlayerController::CharacterMovementInputComplete(const FInputActionInstance& Instance)
 {
-	OnCharacterMovementComplete.Broadcast();
+	OnCharacterMovementInputComplete.Broadcast();
 }
 #pragma endregion
 
 #pragma region Camera Input
-void AMyPlayerController::CameraMovementStarted(const FInputActionInstance& Instance)
+void AMyPlayerController::CameraMovementInputStarted(const FInputActionInstance& Instance)
 {
-	OnCameraMovementStarted.Broadcast();
+	OnCameraMovementInputStarted.Broadcast();
 }
 
-void AMyPlayerController::CameraMove(const FInputActionInstance& Instance)
+void AMyPlayerController::CameraMovementInputTriggered(const FInputActionInstance& Instance)
 {
-	OnCameraMovement.Broadcast(Instance.GetValue().Get<FVector2D>());
+	const FVector2D& cameraInput = Instance.GetValue().Get<FVector2D>();
+	OnCameraMovementInputTriggered.Broadcast(cameraInput);
 }
 
-void AMyPlayerController::CameraMovementComplete(const FInputActionInstance& Instance)
+void AMyPlayerController::CameraMovementInputComplete(const FInputActionInstance& Instance)
 {
-	OnCameraMovementComplete.Broadcast();
+	OnCameraMovementInputComplete.Broadcast();
 }
 #pragma endregion
 
 #pragma region Gait
-void AMyPlayerController::GaitChange(const FInputActionInstance& Instance)
+void AMyPlayerController::GaitChangeInputStarted(const FInputActionInstance& Instance)
 {
-	OnGaitChange.Broadcast(Instance.GetValue().Get<bool>());
+	OnGaitChangeInputStarted.Broadcast();
 }
 #pragma endregion

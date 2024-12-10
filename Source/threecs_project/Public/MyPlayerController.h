@@ -25,56 +25,56 @@ class THREECS_PROJECT_API AMyPlayerController : public APlayerController
 #pragma region Character Movement
 private:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
-	UInputMappingContext* CharacterMovementInputMapping;
+	TObjectPtr<UInputMappingContext> CharacterMovementInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
-	UInputAction* CharacterMovementInputAction;
+	TObjectPtr<UInputAction> CharacterMovementInputAction;
 
-	void CharacterMovementStarted(const FInputActionInstance& Instance);
+	void CharacterMovementInputStarted(const FInputActionInstance& Instance);
 
-	void CharacterMove(const FInputActionInstance& Instance);
+	void CharacterMovementInputTriggered(const FInputActionInstance& Instance);
 
-	void CharacterMovementComplete(const FInputActionInstance& Instance);
+	void CharacterMovementInputComplete(const FInputActionInstance& Instance);
 
 public:
-	FNoParamsDelegate OnCharacterMovementStarted;
+	FNoParamsDelegate OnCharacterMovementInputStarted;
 
-	FVector2Delegate OnCharacterMovement;
+	FVector2Delegate OnCharacterMovementInputTriggered;
 
-	FNoParamsDelegate OnCharacterMovementComplete;
+	FNoParamsDelegate OnCharacterMovementInputComplete;
 #pragma endregion
 
 #pragma region Gait
 private:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
-	UInputAction* CharacterGaitChangeInputAction;
+	TObjectPtr<UInputAction> CharacterGaitChangeInputAction;
 
-	void GaitChange(const FInputActionInstance& Instance);
+	void GaitChangeInputStarted(const FInputActionInstance& Instance);
 
 public:
-	FBoolDelegate OnGaitChange;
+	FNoParamsDelegate OnGaitChangeInputStarted;
 #pragma endregion
 
 #pragma region Camera Input
 private:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
-	UInputMappingContext* CameraInputMapping;
+	TObjectPtr<UInputMappingContext> CameraInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
-	UInputAction* CameraInputAction;
+	TObjectPtr<UInputAction> CameraInputAction;
 
-	void CameraMovementStarted(const FInputActionInstance& Instance);
+	void CameraMovementInputStarted(const FInputActionInstance& Instance);
 
-	void CameraMove(const FInputActionInstance& Instance);
+	void CameraMovementInputTriggered(const FInputActionInstance& Instance);
 
-	void CameraMovementComplete(const FInputActionInstance& Instance);
+	void CameraMovementInputComplete(const FInputActionInstance& Instance);
 
 public:
-	FNoParamsDelegate OnCameraMovementStarted;
+	FNoParamsDelegate OnCameraMovementInputStarted;
 
-	FVector2Delegate OnCameraMovement;
+	FVector2Delegate OnCameraMovementInputTriggered;
 
-	FNoParamsDelegate OnCameraMovementComplete;
+	FNoParamsDelegate OnCameraMovementInputComplete;
 #pragma endregion
 	
 public:

@@ -54,7 +54,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float CharacterMovementSpeedChange;
 
-	void OnCharacterMovement(FVector2D movementVector);
+	void OnCharacterMovementTriggered(FVector2D movementVector);
 
 	void OnCharacterMovementStarted();
 
@@ -95,7 +95,7 @@ private:
 
 #pragma region Gait
 private:
-	void OnGaitChange(bool _);
+	void OnGaitChangeTriggered();
 #pragma endregion
 
 #pragma region Camera
@@ -106,9 +106,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<USceneComponent> CameraParent;
 
-	virtual void SetCameraRotation() PURE_VIRTUAL(ABase_MyCharacter::SetCameraRotation)
+	virtual void RotateCamera() PURE_VIRTUAL(ABase_MyCharacter::RotateCamera)
 
-	virtual void OnCameraMovement(FVector2D cameraVector);
+	virtual void OnCameraMovementTriggered(FVector2D cameraVector);
 
 	float CurrViewVerticalAngle;
 

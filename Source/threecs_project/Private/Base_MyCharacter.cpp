@@ -26,9 +26,9 @@ ABase_MyCharacter::ABase_MyCharacter()
 	FastCharacterRotationalSpeed = 30;
 	FastRotationThreshold = 30;
 
-	CharacterMovementSpeedChange = 2;
-	CharacterWalkMovementSpeed = 4;
-	CharacterRunMovementSpeed = 10;
+	CharacterMovementSpeedChange = 0.15;
+	CharacterWalkMovementSpeed = 0.3;
+	CharacterRunMovementSpeed = 0.7;
 }
 
 // Called when the game starts or when spawned
@@ -36,8 +36,8 @@ void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrCharacterMovementState = ECharacterMovementState::VE_IDLE;
-	CurrCharacterGait = ECharacterGait::VE_WALK;
+	CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	CurrCharacterGait = ECharacterGait::WALK;
 	TargetCharacterMovementSpeed = 0;
 	CurrCharacterMovementSpeed = 0;
 
@@ -51,17 +51,17 @@ void ABase_MyCharacter::BeginPlay()
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	controller->OnCharacterMovementStarted.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
-	controller->OnCharacterMovement.AddUObject(this, &ABase_MyCharacter::OnCharacterMovement);
-	controller->OnCharacterMovementComplete.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	controller->OnCharacterMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	controller->OnCharacterMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	controller->OnCharacterMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
 	
-	controller->OnCameraMovementStarted.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
-	controller->OnCameraMovement.AddUObject(this, &ABase_MyCharacter::OnCameraMovement);
-	controller->OnCameraMovementComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
+	controller->OnCameraMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
+	controller->OnCameraMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
+	controller->OnCameraMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
 	
-	controller->OnGaitChange.AddUObject(this, &ABase_MyCharacter::OnGaitChange);
+	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
 
-	SetCameraRotation();
+	RotateCamera();
 }
 
 void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -70,15 +70,15 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (controller)
 	{
-		controller->OnCharacterMovementStarted.RemoveAll(this);
-		controller->OnCharacterMovement.RemoveAll(this);
-		controller->OnCharacterMovementComplete.RemoveAll(this);
+		controller->OnCharacterMovementInputStarted.RemoveAll(this);
+		controller->OnCharacterMovementInputTriggered.RemoveAll(this);
+		controller->OnCharacterMovementInputComplete.RemoveAll(this);
 		
-		controller->OnCameraMovementStarted.RemoveAll(this);
-		controller->OnCameraMovement.RemoveAll(this);
-		controller->OnCameraMovementComplete.RemoveAll(this);
+		controller->OnCameraMovementInputStarted.RemoveAll(this);
+		controller->OnCameraMovementInputTriggered.RemoveAll(this);
+		controller->OnCameraMovementInputComplete.RemoveAll(this);
 		
-		controller->OnGaitChange.RemoveAll(this);
+		controller->OnGaitChangeInputStarted.RemoveAll(this);
 	}
 }
 #pragma endregion
@@ -86,26 +86,31 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 #pragma region Movement
 void ABase_MyCharacter::OnCharacterMovementStarted()
 {
-	CurrCharacterMovementState = ECharacterMovementState::VE_MOVING;
+	CurrCharacterMovementState = ECharacterMovementState::MOVING;
 	// reset gait to walk
-	CurrCharacterGait = ECharacterGait::VE_WALK;
+	CurrCharacterGait = ECharacterGait::WALK;
 	SetTargetCharacterMovementSpeed();
 }
 
-void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
+void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
 {
 	MovementInput = movementVector;
 }
 
 void ABase_MyCharacter::Move(float deltaTime)
 {
-	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), MovementInput.Y * CurrCharacterMovementSpeed * deltaTime);
-	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), MovementInput.X * CurrCharacterMovementSpeed * deltaTime);
+	FVector forwardDirection = FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	float forwardMovementAmount = MovementInput.Y * CurrCharacterMovementSpeed;
+	AddMovementInput(forwardDirection, forwardMovementAmount);
+
+	FVector rightDirection = FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	float rightMovementAmount = MovementInput.X * CurrCharacterMovementSpeed;
+	AddMovementInput(rightDirection, rightMovementAmount);
 }
 
 void ABase_MyCharacter::OnCharacterMovementComplete()
 {
-	CurrCharacterMovementState = ECharacterMovementState::VE_IDLE;
+	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	SetTargetCharacterMovementSpeed();
 }
 
@@ -123,17 +128,17 @@ void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
 
 void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 {
-	if (CurrCharacterMovementState == ECharacterMovementState::VE_IDLE)
+	if (CurrCharacterMovementState == ECharacterMovementState::IDLE)
 		TargetCharacterMovementSpeed = 0;
 	else
-		TargetCharacterMovementSpeed = CurrCharacterGait == ECharacterGait::VE_RUN ? CharacterRunMovementSpeed : CharacterWalkMovementSpeed;
+		TargetCharacterMovementSpeed = CurrCharacterGait == ECharacterGait::RUN ? CharacterRunMovementSpeed : CharacterWalkMovementSpeed;
 }
 #pragma endregion
 
 #pragma region Gait
-void ABase_MyCharacter::OnGaitChange(bool _)
+void ABase_MyCharacter::OnGaitChangeTriggered()
 {
-	CurrCharacterGait = CurrCharacterGait == ECharacterGait::VE_RUN ? ECharacterGait::VE_WALK : ECharacterGait::VE_RUN;
+	CurrCharacterGait = CurrCharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
 	SetTargetCharacterMovementSpeed();
 }
 #pragma endregion
@@ -163,7 +168,6 @@ void ABase_MyCharacter::SetCharacterRotation(float deltaTime)
 	{
 		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + rotationSpeed * deltaTime, TargetCharacterHorizontalAngle);
 	}
-	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 }
 #pragma endregion
 
@@ -173,7 +177,7 @@ void ABase_MyCharacter::OnCameraMovementStarted()
 	HasCameraInput = true;
 }
 
-void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
+void ABase_MyCharacter::OnCameraMovementTriggered(FVector2D cameraVector)
 {
 	CameraInput = cameraVector;
 }
@@ -198,13 +202,14 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetTargetCharacterRotation();
 	}
 
-	if (CurrCharacterMovementState == ECharacterMovementState::VE_MOVING)
+	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
 	{
 		SetCharacterRotation(deltaTime);
+		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 	}
 
 	SetCharacterMovementSpeed(deltaTime);
 	Move(deltaTime);
 
-	SetCameraRotation();
+	RotateCamera();
 }

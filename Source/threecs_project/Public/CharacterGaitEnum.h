@@ -9,6 +9,6 @@
 UENUM()
 enum class ECharacterGait : uint8
 {
-	VE_WALK UMETA(DisplayName="Walk"),
-	VE_RUN  UMETA(DisplayName="Run")
+	WALK UMETA(DisplayName="Walk"),
+	RUN  UMETA(DisplayName="Run")
 };

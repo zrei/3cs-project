@@ -14,7 +14,8 @@ AMyCharacter::AMyCharacter()
 	Camera->SetupAttachment(CameraSpringArm);
 }
 
-void AMyCharacter::SetCameraRotation()
+void AMyCharacter::RotateCamera()
 {
-	CameraSpringArm->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ CurrViewVerticalAngle, CurrViewHorizontalAngle, 0 }));
+	FQuat springarmWorldRotation = FQuat::MakeFromRotator(FRotator{ CurrViewVerticalAngle, CurrViewHorizontalAngle, 0 });
+	CameraSpringArm->SetWorldRotation(springarmWorldRotation);
 }

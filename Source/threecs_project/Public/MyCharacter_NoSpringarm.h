@@ -23,7 +23,7 @@ public:
 	AMyCharacter_NoSpringarm();
 
 protected:
-	virtual void SetCameraRotation() override;
+	virtual void RotateCamera() override;
 
 	// TODO: Socket offset
 	UPROPERTY(EditAnywhere, Category = "Camera")
