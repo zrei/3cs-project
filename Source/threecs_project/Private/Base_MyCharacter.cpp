@@ -4,6 +4,7 @@
 #include "threecs_project/Public/Base_MyCharacter.h"
 #include "threecs_project/Public/MyPlayerController.h"
 
+#pragma region Initialisation
 // Sets default values
 ABase_MyCharacter::ABase_MyCharacter()
 {
@@ -17,12 +18,17 @@ ABase_MyCharacter::ABase_MyCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(CameraParent);
 
-	CameraRotationalSpeed = 2;
+	CameraRotationalSpeed = 10;
 	MaxViewVerticalAngle = 30;
 	MinViewVerticalAngle = -60;
 
-	CharacterRotationalSpeed = 1;
-	CharacterMovementSpeed = 1;
+	CharacterRotationalSpeed = 4;
+	FastCharacterRotationalSpeed = 30;
+	FastRotationThreshold = 30;
+
+	CharacterMovementSpeedChange = 0.15;
+	CharacterWalkMovementSpeed = 0.3;
+	CharacterRunMovementSpeed = 0.7;
 }
 
 // Called when the game starts or when spawned
@@ -30,6 +36,13 @@ void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	CurrCharacterGait = ECharacterGait::WALK;
+	TargetCharacterMovementSpeed = 0;
+	CurrCharacterMovementSpeed = 0;
+
+	HasCameraInput = false;
+	CameraInput = FVector2D::Zero();
 	CurrViewVerticalAngle = 0;
 
 	CurrViewHorizontalAngle = GetActorRotation().Yaw;
@@ -38,10 +51,17 @@ void ABase_MyCharacter::BeginPlay()
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	controller->OnCharacterMovement.AddUObject(this, &ABase_MyCharacter::OnCharacterMovement);
-	controller->OnCameraMovement.AddUObject(this, &ABase_MyCharacter::OnCameraMovement);
+	controller->OnCharacterMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	controller->OnCharacterMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	controller->OnCharacterMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	
+	controller->OnCameraMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
+	controller->OnCameraMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
+	controller->OnCameraMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
+	
+	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
 
-	SetCameraRotation();
+	RotateCamera();
 }
 
 void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -50,34 +70,82 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (controller)
 	{
-		controller->OnCharacterMovement.RemoveAll(this);
-		controller->OnCameraMovement.RemoveAll(this);
+		controller->OnCharacterMovementInputStarted.RemoveAll(this);
+		controller->OnCharacterMovementInputTriggered.RemoveAll(this);
+		controller->OnCharacterMovementInputComplete.RemoveAll(this);
+		
+		controller->OnCameraMovementInputStarted.RemoveAll(this);
+		controller->OnCameraMovementInputTriggered.RemoveAll(this);
+		controller->OnCameraMovementInputComplete.RemoveAll(this);
+		
+		controller->OnGaitChangeInputStarted.RemoveAll(this);
+	}
+}
+#pragma endregion
+
+#pragma region Movement
+void ABase_MyCharacter::OnCharacterMovementStarted()
+{
+	CurrCharacterMovementState = ECharacterMovementState::MOVING;
+	// reset gait to walk
+	CurrCharacterGait = ECharacterGait::WALK;
+	SetTargetCharacterMovementSpeed();
+}
+
+void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
+{
+	MovementInput = movementVector;
+}
+
+void ABase_MyCharacter::Move(float deltaTime)
+{
+	FVector forwardDirection = FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	float forwardMovementAmount = MovementInput.Y * CurrCharacterMovementSpeed;
+	AddMovementInput(forwardDirection, forwardMovementAmount);
+
+	FVector rightDirection = FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	float rightMovementAmount = MovementInput.X * CurrCharacterMovementSpeed;
+	AddMovementInput(rightDirection, rightMovementAmount);
+}
+
+void ABase_MyCharacter::OnCharacterMovementComplete()
+{
+	CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	SetTargetCharacterMovementSpeed();
+}
+
+void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
+{
+	if (TargetCharacterMovementSpeed > CurrCharacterMovementSpeed)
+	{
+		CurrCharacterMovementSpeed = FMath::Min(CurrCharacterMovementSpeed + CharacterMovementSpeedChange * deltaTime, TargetCharacterMovementSpeed);
+	}
+	else if (TargetCharacterMovementSpeed < CurrCharacterMovementSpeed)
+	{
+		CurrCharacterMovementSpeed = FMath::Max(CurrCharacterMovementSpeed - CharacterMovementSpeedChange * deltaTime, TargetCharacterMovementSpeed);
 	}
 }
 
-void ABase_MyCharacter::OnCharacterMovement(FVector2D movementVector)
+void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 {
-	// lerp the rotation of the character towards the target horizontal angle
-	// TODO: Handle small differences and large differences
-	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
-	{
-		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - CharacterRotationalSpeed, TargetCharacterHorizontalAngle);
-	}
-	else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
-	{
-		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + CharacterRotationalSpeed, TargetCharacterHorizontalAngle);
-	}
-	SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
-
-	AddMovementInput(FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.Y * CharacterMovementSpeed);
-	AddMovementInput(FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, { 0, 0, 1 }), movementVector.X * CharacterMovementSpeed);
+	if (CurrCharacterMovementState == ECharacterMovementState::IDLE)
+		TargetCharacterMovementSpeed = 0;
+	else
+		TargetCharacterMovementSpeed = CurrCharacterGait == ECharacterGait::RUN ? CharacterRunMovementSpeed : CharacterWalkMovementSpeed;
 }
+#pragma endregion
 
-void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
+#pragma region Gait
+void ABase_MyCharacter::OnGaitChangeTriggered()
 {
-	CurrViewVerticalAngle = FMath::ClampAngle(CurrViewVerticalAngle + cameraVector.Y * CameraRotationalSpeed, MinViewVerticalAngle, MaxViewVerticalAngle);
-	CurrViewHorizontalAngle = FMath::ClampAngle(CurrViewHorizontalAngle + cameraVector.X * CameraRotationalSpeed, 0, 359.9);
-	
+	CurrCharacterGait = CurrCharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
+	SetTargetCharacterMovementSpeed();
+}
+#pragma endregion
+
+#pragma region Rotation
+void ABase_MyCharacter::SetTargetCharacterRotation()
+{
 	// set target character horizontal angle to be from 0 - 360
 	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle < 0 ? 360 + CurrViewHorizontalAngle : CurrViewHorizontalAngle;
 	// reverse the direction if the angle > 180
@@ -85,4 +153,63 @@ void ABase_MyCharacter::OnCameraMovement(FVector2D cameraVector)
 	{
 		TargetCharacterHorizontalAngle = -(360 - TargetCharacterHorizontalAngle);
 	}
+}
+
+void ABase_MyCharacter::SetCharacterRotation(float deltaTime)
+{
+	// lerp the rotation of the character towards the target horizontal angle
+	// TODO: Handle small differences and large differences
+	float rotationSpeed = FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > FastRotationThreshold ? FastCharacterRotationalSpeed : CharacterRotationalSpeed;
+	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
+	{
+		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - rotationSpeed * deltaTime, TargetCharacterHorizontalAngle);
+	}
+	else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
+	{
+		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + rotationSpeed * deltaTime, TargetCharacterHorizontalAngle);
+	}
+}
+#pragma endregion
+
+#pragma region Camera
+void ABase_MyCharacter::OnCameraMovementStarted()
+{
+	HasCameraInput = true;
+}
+
+void ABase_MyCharacter::OnCameraMovementTriggered(FVector2D cameraVector)
+{
+	CameraInput = cameraVector;
+}
+
+void ABase_MyCharacter::OnCameraMovementComplete()
+{
+	HasCameraInput = false;
+}
+
+void ABase_MyCharacter::SetTargetCameraRotation(float deltaTime)
+{
+	CurrViewVerticalAngle = FMath::ClampAngle(CurrViewVerticalAngle + CameraInput.Y * CameraRotationalSpeed * deltaTime, MinViewVerticalAngle, MaxViewVerticalAngle);
+	CurrViewHorizontalAngle = FMath::ClampAngle(CurrViewHorizontalAngle + CameraInput.X * CameraRotationalSpeed * deltaTime, 0, 359.9);
+}
+#pragma endregion
+
+void ABase_MyCharacter::Tick(float deltaTime)
+{
+	if (HasCameraInput)
+	{
+		SetTargetCameraRotation(deltaTime);
+		SetTargetCharacterRotation();
+	}
+
+	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
+	{
+		SetCharacterRotation(deltaTime);
+		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+	}
+
+	SetCharacterMovementSpeed(deltaTime);
+	Move(deltaTime);
+
+	RotateCamera();
 }

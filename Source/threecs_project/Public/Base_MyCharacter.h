@@ -8,6 +8,8 @@ class USceneComponent;
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
+#include "threecs_project/public/CharacterGaitEnum.h"
+#include "threecs_project/public/CharacterMovementStateEnum.h"
 #include "Base_MyCharacter.generated.h"
 
 /*
@@ -32,24 +34,87 @@ protected:
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	virtual void SetCameraRotation() PURE_VIRTUAL(ABase_MyCharacter::SetCameraRotation)
+	virtual void Tick(float deltaTime) override;
 
-	virtual void OnCameraMovement(FVector2D cameraVector);
+#pragma region State
+private:
+	ECharacterGait CurrCharacterGait;
 
+	ECharacterMovementState CurrCharacterMovementState;
+#pragma endregion
+
+#pragma region Character Movement
+private:
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterWalkMovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterRunMovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterMovementSpeedChange;
+
+	void OnCharacterMovementTriggered(FVector2D movementVector);
+
+	void OnCharacterMovementStarted();
+
+	void OnCharacterMovementComplete();
+
+	FVector2D MovementInput;
+
+	void Move(float deltaTime);
+
+	void SetCharacterMovementSpeed(float deltaTime);
+
+	void SetTargetCharacterMovementSpeed();
+
+	float CurrCharacterMovementSpeed;
+
+	float TargetCharacterMovementSpeed;
+#pragma endregion
+
+#pragma region Rotation
+private:
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float CharacterRotationalSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float FastCharacterRotationalSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float FastRotationThreshold;
+
+	void SetTargetCharacterRotation();
+
+	void SetCharacterRotation(float deltaTime);
+
+	float CurrCharacterHorizontalAngle;
+
+	float TargetCharacterHorizontalAngle;
+#pragma endregion
+
+#pragma region Gait
+private:
+	void OnGaitChangeTriggered();
+#pragma endregion
+
+#pragma region Camera
+protected:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
-	// making it a TObjectPtr to follow Unreal's recommendation
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<USceneComponent> CameraParent;
+
+	virtual void RotateCamera() PURE_VIRTUAL(ABase_MyCharacter::RotateCamera)
+
+	virtual void OnCameraMovementTriggered(FVector2D cameraVector);
 
 	float CurrViewVerticalAngle;
 
 	float CurrViewHorizontalAngle;
 
 private:
-	void OnCharacterMovement(FVector2D movementVector);
-
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float MinViewVerticalAngle;
 
@@ -59,13 +124,14 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float CameraRotationalSpeed;
 
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterMovementSpeed;
+	void OnCameraMovementStarted();
 
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterRotationalSpeed;
+	void OnCameraMovementComplete();
 
-	float CurrCharacterHorizontalAngle;
+	bool HasCameraInput;
 
-	float TargetCharacterHorizontalAngle;
+	FVector2D CameraInput;
+
+	void SetTargetCameraRotation(float deltaTime);
+#pragma endregion
 };

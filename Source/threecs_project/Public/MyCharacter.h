@@ -22,9 +22,7 @@ public:
 	AMyCharacter();
 
 protected:
-	virtual void OnCameraMovement(FVector2D cameraVector) override;
-
-	virtual void SetCameraRotation() override;
+	virtual void RotateCamera() override;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> CameraSpringArm;
