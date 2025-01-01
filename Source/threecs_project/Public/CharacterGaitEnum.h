@@ -12,3 +12,11 @@ enum class ECharacterGait : uint8
 	WALK UMETA(DisplayName="Walk"),
 	RUN  UMETA(DisplayName="Run")
 };
+
+UENUM(BlueprintType)
+enum class ERotateDirection : uint8
+{
+	NONE UMETA(DisplayName="None"),
+	LEFT UMETA(DisplayName="Left"),
+	RIGHT UMETA(DisplayName="Right")
+};

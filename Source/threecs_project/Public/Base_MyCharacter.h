@@ -41,6 +41,8 @@ private:
 	ECharacterGait CurrCharacterGait;
 
 	ECharacterMovementState CurrCharacterMovementState;
+
+	ERotateDirection CurrRotationDirection;
 #pragma endregion
 
 #pragma region Character Movement
@@ -68,6 +70,8 @@ private:
 
 	void SetTargetCharacterMovementSpeed();
 
+	float GetMovementRotation() const;
+
 	float CurrCharacterMovementSpeed;
 
 	float TargetCharacterMovementSpeed;
@@ -84,8 +88,11 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float FastRotationThreshold;
 
-	void SetTargetCharacterRotation();
+	UPROPERTY(EditAnywhere, Category = "Rotation")
+	float StationaryRotationThreshold;
 
+	void SetTargetCharacterRotation();
+	
 	void SetCharacterRotation(float deltaTime);
 
 	float CurrCharacterHorizontalAngle;
@@ -133,5 +140,16 @@ private:
 	FVector2D CameraInput;
 
 	void SetTargetCameraRotation(float deltaTime);
+#pragma endregion
+
+#pragma region Character Info
+	UFUNCTION(BlueprintCallable)
+	bool IsRunning() const;
+
+	UFUNCTION(BlueprintCallable)
+	bool ShouldRotateInPlace() const;
+
+	UFUNCTION(BlueprintCallable)
+	ERotateDirection RotateDirection() const;
 #pragma endregion
 };
