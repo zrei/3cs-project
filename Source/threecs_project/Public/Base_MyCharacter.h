@@ -8,8 +8,7 @@ class USceneComponent;
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
-#include "threecs_project/public/CharacterGaitEnum.h"
-#include "threecs_project/public/CharacterMovementStateEnum.h"
+#include "CharacterState.h"
 #include "Base_MyCharacter.generated.h"
 
 /*
@@ -143,6 +142,9 @@ private:
 #pragma endregion
 
 #pragma region Character Info
+	UPROPERTY(EditAnywhere)
+	FCharacterMovementSettings MovementSettings;
+
 	UFUNCTION(BlueprintCallable)
 	bool IsRunning() const;
 
@@ -151,5 +153,11 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	ERotateDirection RotateDirection() const;
+
+	UFUNCTION(BlueprintCallable)
+	FCharacterMovementSettings GetMovementSettings() const
+	{
+		return MovementSettings;
+	}
 #pragma endregion
 };

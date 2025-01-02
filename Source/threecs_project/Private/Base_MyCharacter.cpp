@@ -3,6 +3,7 @@
 
 #include "threecs_project/Public/Base_MyCharacter.h"
 #include "threecs_project/Public/MyPlayerController.h"
+#include "Math/UnrealMathUtility.h"
 
 #pragma region Initialisation
 // Sets default values
@@ -140,7 +141,10 @@ void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 
 float ABase_MyCharacter::GetMovementRotation() const
 {
-	float movementRotation = FMath::Acos(FVector2D{0, 1}.Dot(MovementInput));
+	float dotProduct = FVector2D{ 0, 1 }.Dot(MovementInput);	
+	float movementRotation = FMath::Acos(FVector2D{0, 1}.Dot(MovementInput)) * (180 / PI);
+	if (MovementInput.X < 0)
+		movementRotation = -movementRotation;
 	return movementRotation;
 }
 #pragma endregion
@@ -159,7 +163,9 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	// set target character horizontal angle to be from 0 - 360
 	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
 	{
-		TargetCharacterHorizontalAngle = CurrViewHorizontalAngle + GetMovementRotation();
+		float rotationFromMovementInput = GetMovementRotation();
+		UE_LOG(LogTemp, Warning, TEXT("Rotation from movement input: %f"), rotationFromMovementInput);
+		TargetCharacterHorizontalAngle = CurrViewHorizontalAngle + rotationFromMovementInput;
 		UE_LOG(LogTemp, Warning, TEXT("Final target character rotation: %f"), TargetCharacterHorizontalAngle);
 	}
 	else
@@ -240,6 +246,7 @@ void ABase_MyCharacter::Tick(float deltaTime)
 
 	if (TargetCharacterHorizontalAngle != CurrCharacterHorizontalAngle)
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("ROTATE"));
 		SetCharacterRotation(deltaTime);
 		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 	}
