@@ -46,15 +46,6 @@ private:
 
 #pragma region Character Movement
 private:
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterWalkMovementSpeed;
-
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterRunMovementSpeed;
-
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterMovementSpeedChange;
-
 	void OnCharacterMovementTriggered(FVector2D movementVector);
 
 	void OnCharacterMovementStarted();
@@ -78,21 +69,11 @@ private:
 
 #pragma region Rotation
 private:
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float CharacterRotationalSpeed;
-
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float FastCharacterRotationalSpeed;
-
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float FastRotationThreshold;
-
-	UPROPERTY(EditAnywhere, Category = "Rotation")
-	float StationaryRotationThreshold;
-
 	void SetTargetCharacterRotation();
 	
 	void SetCharacterRotation(float deltaTime);
+
+	void UpdateCharacterGroundedRotation(float deltaTime);
 
 	float CurrCharacterHorizontalAngle;
 
@@ -106,6 +87,9 @@ private:
 
 #pragma region Camera
 protected:
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	FCameraSettings CameraSettings;
+
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
@@ -121,15 +105,6 @@ protected:
 	float CurrViewHorizontalAngle;
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MinViewVerticalAngle;
-
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	float MaxViewVerticalAngle;
-
-	UPROPERTY(EditAnywhere, Category = "Camera")
-	float CameraRotationalSpeed;
-
 	void OnCameraMovementStarted();
 
 	void OnCameraMovementComplete();
@@ -142,8 +117,15 @@ private:
 #pragma endregion
 
 #pragma region Character Info
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Movement")
 	FCharacterMovementSettings MovementSettings;
+
+	TObjectPtr<USkeletalMeshComponent> SkeletalMesh;
+
+	TObjectPtr<UAnimInstance> MainAnimInstance;
+
+	UPROPERTY(EditAnywhere, Category="Rotation")
+	FName RotationCurveName;
 
 	UFUNCTION(BlueprintCallable)
 	bool IsRunning() const;
@@ -155,9 +137,9 @@ private:
 	ERotateDirection RotateDirection() const;
 
 	UFUNCTION(BlueprintCallable)
-	FCharacterMovementSettings GetMovementSettings() const
-	{
-		return MovementSettings;
-	}
+	FCharacterMovementSettings GetMovementSettings() const;
+
+	UFUNCTION(BlueprintCallable)
+	FCharacterState GetCurrentState() const;
 #pragma endregion
 };

@@ -33,21 +33,36 @@ struct FCharacterState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterMovementState CharacterMovementState;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ERotateDirection RotationDirection;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterGait CharacterGait;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float TargetCharacterRotation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float CurrCharacterRotation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float CurrCharacterSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float TargetCharacterSpeed;
+
 	FCharacterState() : CharacterMovementState(ECharacterMovementState::IDLE), RotationDirection(ERotateDirection::NONE),
-		CharacterGait(ECharacterGait::WALK) {}
+		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), CurrCharacterRotation(0), CurrCharacterSpeed(0),
+		TargetCharacterSpeed(0) {}
 
 	FCharacterState(ECharacterMovementState characterMovementState, ERotateDirection rotateDirection,
-		ECharacterGait characterGait) : CharacterMovementState(characterMovementState), RotationDirection(rotateDirection),
-		CharacterGait(characterGait) {}
+		ECharacterGait characterGait, float targetCharacterRotation, float currCharacterRotation, float currCharacterSpeed,
+		float targetCharacterSpeed) : CharacterMovementState(characterMovementState), RotationDirection(rotateDirection),
+		CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), CurrCharacterRotation(currCharacterRotation),
+		CurrCharacterSpeed(currCharacterSpeed), TargetCharacterSpeed(targetCharacterSpeed) {}
 };
 
 USTRUCT(BlueprintType)
@@ -56,20 +71,51 @@ struct FCharacterMovementSettings
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
-	float FastRotationSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CharacterWalkMovementSpeed;
 
-	UPROPERTY(VisibleAnywhere)
-	float SlowRotationSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CharacterRunMovementSpeed;
 
-	UPROPERTY(VisibleAnywhere)
-	float LargeRotationThreshold;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CharacterMovementSpeedChange;
 
-	FCharacterMovementSettings() : FastRotationSpeed(0), SlowRotationSpeed(0),
-		LargeRotationThreshold(0) {
-	}
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float CharacterRotationalSpeed;
 
-	FCharacterMovementSettings(float fastRotationSpeed, float slowRotationSpeed, float largeRotationThreshold)
-		: FastRotationSpeed(fastRotationSpeed), SlowRotationSpeed(slowRotationSpeed), LargeRotationThreshold(LargeRotationThreshold) {
-	}
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float FastCharacterRotationalSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float StationaryRotationThreshold;
+
+	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterMovementSpeedChange(0),
+		CharacterRotationalSpeed(0), FastCharacterRotationalSpeed(0), StationaryRotationThreshold(0) {}
+
+	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterMovementSpeedChange,
+		float characterRotationalSpeed, float fastCharacterRotationalSpeed, float fastRotationThreshold)
+		: CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
+		CharacterMovementSpeedChange(characterMovementSpeedChange), CharacterRotationalSpeed(characterRotationalSpeed),
+		FastCharacterRotationalSpeed(fastCharacterRotationalSpeed), StationaryRotationThreshold(fastRotationThreshold) {}
+};
+
+USTRUCT(BlueprintType)
+struct FCameraSettings
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	float MinViewVerticalAngle;
+
+	UPROPERTY(EditAnywhere)
+	float MaxViewVerticalAngle;
+
+	UPROPERTY(EditAnywhere)
+	float CameraRotationalSpeed;
+
+	FCameraSettings() : MinViewVerticalAngle(0), MaxViewVerticalAngle(0), CameraRotationalSpeed(0) {}
+
+	FCameraSettings(float minViewVerticalAngle, float maxViewVerticalAngle, float cameraRotationalSpeed) :
+		MinViewVerticalAngle(minViewVerticalAngle), MaxViewVerticalAngle(maxViewVerticalAngle), CameraRotationalSpeed(cameraRotationalSpeed) {}
 };
