@@ -20,10 +20,10 @@ ABase_MyCharacter::ABase_MyCharacter()
 	Camera->SetupAttachment(CameraParent);
 
 	MovementSettings.CharacterMovementSpeedChange = 0.15;
-	MovementSettings.CharacterRotationalSpeed = 15;
 	MovementSettings.CharacterRunMovementSpeed = 0.7;
 	MovementSettings.CharacterWalkMovementSpeed = 0.3;
-	MovementSettings.FastCharacterRotationalSpeed = 70;
+	MovementSettings.CharacterStationaryRotationalSpeed = 15;
+	MovementSettings.CharacterMovingRotationalSpeed = 70;
 	MovementSettings.StationaryRotationThreshold = 5;
 
 	CameraSettings.CameraRotationalSpeed = 10;
@@ -38,9 +38,9 @@ void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SkeletalMesh = FindComponentByClass<USkeletalMeshComponent>();
-	if (SkeletalMesh)
-		MainAnimInstance = SkeletalMesh->GetAnimInstance();
+	TObjectPtr<USkeletalMeshComponent> skeletalMesh = FindComponentByClass<USkeletalMeshComponent>();
+	if (skeletalMesh)
+		MainAnimInstance = skeletalMesh->GetAnimInstance();
 
 	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	CurrCharacterGait = ECharacterGait::WALK;
@@ -107,11 +107,11 @@ void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
 
 void ABase_MyCharacter::Move(float deltaTime)
 {
-	FVector forwardDirection = GetActorForwardVector(); //FVector::ForwardVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	FVector forwardDirection = GetActorForwardVector();
 	float forwardMovementAmount = MovementInput.Y * CurrCharacterMovementSpeed;
 	AddMovementInput(forwardDirection, forwardMovementAmount);
 
-	FVector rightDirection = GetActorRightVector(); //FVector::RightVector.RotateAngleAxis(CurrCharacterHorizontalAngle, FVector::UpVector);
+	FVector rightDirection = GetActorRightVector();
 	float rightMovementAmount = MovementInput.X * CurrCharacterMovementSpeed;
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
@@ -127,11 +127,13 @@ void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
 {
 	if (TargetCharacterMovementSpeed > CurrCharacterMovementSpeed)
 	{
-		CurrCharacterMovementSpeed = FMath::Min(CurrCharacterMovementSpeed + MovementSettings.CharacterMovementSpeedChange * deltaTime, TargetCharacterMovementSpeed);
+		float uncappedMovementSpeed = CurrCharacterMovementSpeed + MovementSettings.CharacterMovementSpeedChange * deltaTime;
+		CurrCharacterMovementSpeed = FMath::Min(uncappedMovementSpeed, TargetCharacterMovementSpeed);
 	}
 	else if (TargetCharacterMovementSpeed < CurrCharacterMovementSpeed)
 	{
-		CurrCharacterMovementSpeed = FMath::Max(CurrCharacterMovementSpeed - MovementSettings.CharacterMovementSpeedChange * deltaTime, TargetCharacterMovementSpeed);
+		float uncappedMovementSpeed = CurrCharacterMovementSpeed - MovementSettings.CharacterMovementSpeedChange * deltaTime;
+		CurrCharacterMovementSpeed = FMath::Max(uncappedMovementSpeed, TargetCharacterMovementSpeed);
 	}
 }
 
@@ -145,8 +147,8 @@ void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 
 float ABase_MyCharacter::GetMovementRotation() const
 {
-	float dotProduct = FVector2D{ 0, 1 }.Dot(MovementInput);	
-	float movementRotation = FMath::Acos(FVector2D{0, 1}.Dot(MovementInput)) * (180 / PI);
+	float dotProduct = FVector2D{ 0, 1 }.Dot(MovementInput);
+	float movementRotation = FMath::Acos(dotProduct) * (180 / PI);
 	if (MovementInput.X < 0)
 		movementRotation = -movementRotation;
 	return movementRotation;
@@ -174,6 +176,7 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	{
 		TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
 	}
+	
 	TargetCharacterHorizontalAngle = TargetCharacterHorizontalAngle < 0 ? 360 + TargetCharacterHorizontalAngle : TargetCharacterHorizontalAngle;
 	// reverse the direction if the angle > 180
 	if (FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > 180)
@@ -195,18 +198,20 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	}
 }
 
-void ABase_MyCharacter::SetCharacterRotation(float deltaTime)
+void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 {
 	// lerp the rotation of the character towards the target horizontal angle
 	// TODO: Handle small differences and large differences
 	if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 	{
-		CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle - MovementSettings.FastCharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle - MovementSettings.CharacterMovingRotationalSpeed * deltaTime;
+		CurrCharacterHorizontalAngle = FMath::Max(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
 		
 	}
 	else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
 	{
-		CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + MovementSettings.FastCharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + MovementSettings.CharacterMovingRotationalSpeed * deltaTime;
+		CurrCharacterHorizontalAngle = FMath::Min(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
 	}
 }
 
@@ -215,9 +220,9 @@ bool ABase_MyCharacter::ShouldRotateInPlace() const
 	return CurrCharacterMovementState == ECharacterMovementState::IDLE && FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > MovementSettings.StationaryRotationThreshold;
 }
 
-ERotateDirection ABase_MyCharacter::RotateDirection() const
+bool ABase_MyCharacter::ShouldDoMovingRotation() const
 {
-	return CurrRotationDirection;
+	return CurrCharacterMovementState == ECharacterMovementState::MOVING && TargetCharacterHorizontalAngle != CurrCharacterHorizontalAngle;
 }
 
 void ABase_MyCharacter::UpdateCharacterGroundedRotation(float deltaTime)
@@ -227,15 +232,16 @@ void ABase_MyCharacter::UpdateCharacterGroundedRotation(float deltaTime)
 		float rotationCurveValue = MainAnimInstance->GetCurveValue(RotationCurveName);
 		if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 		{
-			CurrCharacterHorizontalAngle = FMath::Max(CurrCharacterHorizontalAngle + rotationCurveValue * MovementSettings.CharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+			float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + rotationCurveValue * MovementSettings.CharacterStationaryRotationalSpeed * deltaTime;
+			CurrCharacterHorizontalAngle = FMath::Max(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
 		}
 		else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
 		{
-			CurrCharacterHorizontalAngle = FMath::Min(CurrCharacterHorizontalAngle + rotationCurveValue * MovementSettings.CharacterRotationalSpeed * deltaTime, TargetCharacterHorizontalAngle);
+			float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + rotationCurveValue * MovementSettings.CharacterStationaryRotationalSpeed * deltaTime;
+			CurrCharacterHorizontalAngle = FMath::Min(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
 		}
 	}
 }
-
 #pragma endregion
 
 #pragma region Camera
@@ -269,9 +275,9 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetTargetCharacterRotation();
 	}
 
-	if (CurrCharacterMovementState == ECharacterMovementState::MOVING && TargetCharacterHorizontalAngle != CurrCharacterHorizontalAngle)
+	if (ShouldDoMovingRotation())
 	{
-		SetCharacterRotation(deltaTime);
+		UpdateCharacterMovingRotation(deltaTime);
 		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 	}
 	else if (ShouldRotateInPlace())
@@ -286,12 +292,7 @@ void ABase_MyCharacter::Tick(float deltaTime)
 	RotateCamera();
 }
 
-#pragma region Character Information
-bool ABase_MyCharacter::IsRunning() const
-{
-	return CurrCharacterMovementState == ECharacterMovementState::MOVING && CurrCharacterGait == ECharacterGait::RUN;
-}
-
+#pragma region Movement and Rotation Info
 FCharacterMovementSettings ABase_MyCharacter::GetMovementSettings() const
 {
 	return MovementSettings;

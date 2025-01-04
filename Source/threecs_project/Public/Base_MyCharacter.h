@@ -13,8 +13,12 @@ class USceneComponent;
 
 /*
 View direction is calculated and stored whenever the camera is adjusted.
-Movement moves in the character's current facing direction while lerping
-it towards the view direction.
+
+When moving, the forward direction will follow the camera view, with movement
+in other directions changing the target character rotation. Character rotation
+is always lerped.
+
+When stationary, character will turn to follow the camera view.
 
 Vertical view direction is capped with a minimum and maximum angle.
 */
@@ -52,8 +56,6 @@ private:
 
 	void OnCharacterMovementComplete();
 
-	FVector2D MovementInput;
-
 	void Move(float deltaTime);
 
 	void SetCharacterMovementSpeed(float deltaTime);
@@ -65,13 +67,20 @@ private:
 	float CurrCharacterMovementSpeed;
 
 	float TargetCharacterMovementSpeed;
+
+	FVector2D MovementInput;
 #pragma endregion
 
 #pragma region Rotation
 private:
+	UFUNCTION(BlueprintCallable)
+	bool ShouldRotateInPlace() const;
+
+	bool ShouldDoMovingRotation() const;
+
 	void SetTargetCharacterRotation();
 	
-	void SetCharacterRotation(float deltaTime);
+	void UpdateCharacterMovingRotation(float deltaTime);
 
 	void UpdateCharacterGroundedRotation(float deltaTime);
 
@@ -116,30 +125,22 @@ private:
 	void SetTargetCameraRotation(float deltaTime);
 #pragma endregion
 
-#pragma region Character Info
+#pragma region Movement and Rotation Info
+private:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	FCharacterMovementSettings MovementSettings;
-
-	TObjectPtr<USkeletalMeshComponent> SkeletalMesh;
-
-	TObjectPtr<UAnimInstance> MainAnimInstance;
-
-	UPROPERTY(EditAnywhere, Category="Rotation")
-	FName RotationCurveName;
-
-	UFUNCTION(BlueprintCallable)
-	bool IsRunning() const;
-
-	UFUNCTION(BlueprintCallable)
-	bool ShouldRotateInPlace() const;
-
-	UFUNCTION(BlueprintCallable)
-	ERotateDirection RotateDirection() const;
 
 	UFUNCTION(BlueprintCallable)
 	FCharacterMovementSettings GetMovementSettings() const;
 
 	UFUNCTION(BlueprintCallable)
 	FCharacterState GetCurrentState() const;
+#pragma endregion
+
+#pragma region Skeleton and Animation
+	TObjectPtr<UAnimInstance> MainAnimInstance;
+
+	UPROPERTY(EditAnywhere, Category = "Animation")
+	FName RotationCurveName;
 #pragma endregion
 };
