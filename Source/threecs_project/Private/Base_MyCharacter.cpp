@@ -267,6 +267,19 @@ void ABase_MyCharacter::SetTargetCameraRotation(float deltaTime)
 }
 #pragma endregion
 
+#pragma region Movement and Rotation Info
+FCharacterMovementSettings ABase_MyCharacter::GetMovementSettings() const
+{
+	return MovementSettings;
+}
+
+FCharacterState ABase_MyCharacter::GetCurrentState() const
+{
+	return FCharacterState{ CurrCharacterMovementState, CurrRotationDirection, CurrCharacterGait,
+		TargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed };
+}
+#pragma endregion
+
 void ABase_MyCharacter::Tick(float deltaTime)
 {
 	if (HasCameraInput)
@@ -291,16 +304,3 @@ void ABase_MyCharacter::Tick(float deltaTime)
 
 	RotateCamera();
 }
-
-#pragma region Movement and Rotation Info
-FCharacterMovementSettings ABase_MyCharacter::GetMovementSettings() const
-{
-	return MovementSettings;
-}
-
-FCharacterState ABase_MyCharacter::GetCurrentState() const
-{
-	return FCharacterState{CurrCharacterMovementState, CurrRotationDirection, CurrCharacterGait, 
-		TargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed};
-}
-#pragma endregion

@@ -23,13 +23,14 @@ class THREECS_PROJECT_API AMyPlayerController : public APlayerController
 	GENERATED_BODY()
 
 #pragma region Character Movement
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
 	TObjectPtr<UInputMappingContext> CharacterMovementInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
 	TObjectPtr<UInputAction> CharacterMovementInputAction;
 
+private:
 	void CharacterMovementInputStarted(const FInputActionInstance& Instance);
 
 	void CharacterMovementInputTriggered(const FInputActionInstance& Instance);
@@ -45,10 +46,11 @@ public:
 #pragma endregion
 
 #pragma region Gait
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
 	TObjectPtr<UInputAction> CharacterGaitChangeInputAction;
 
+private:
 	void GaitChangeInputStarted(const FInputActionInstance& Instance);
 
 public:
@@ -56,13 +58,14 @@ public:
 #pragma endregion
 
 #pragma region Camera Input
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
 	TObjectPtr<UInputMappingContext> CameraInputMapping;
 
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Camera")
 	TObjectPtr<UInputAction> CameraInputAction;
 
+private:
 	void CameraMovementInputStarted(const FInputActionInstance& Instance);
 
 	void CameraMovementInputTriggered(const FInputActionInstance& Instance);

@@ -126,10 +126,11 @@ private:
 #pragma endregion
 
 #pragma region Movement and Rotation Info
-private:
+protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	FCharacterMovementSettings MovementSettings;
 
+private:
 	UFUNCTION(BlueprintCallable)
 	FCharacterMovementSettings GetMovementSettings() const;
 
@@ -138,9 +139,11 @@ private:
 #pragma endregion
 
 #pragma region Skeleton and Animation
-	TObjectPtr<UAnimInstance> MainAnimInstance;
-
+protected:
 	UPROPERTY(EditAnywhere, Category = "Animation")
 	FName RotationCurveName;
+
+private:
+	TObjectPtr<UAnimInstance> MainAnimInstance;
 #pragma endregion
 };
