@@ -5,7 +5,7 @@
 class USpringArmComponent;
 
 #include "CoreMinimal.h"
-#include "threecs_project/Public/Base_MyCharacter.h"
+#include "Character/Logic/Base_MyCharacter.h"
 #include "MyCharacter.generated.h"
 
 /*

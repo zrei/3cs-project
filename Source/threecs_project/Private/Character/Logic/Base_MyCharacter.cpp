@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Base_MyCharacter.h"
-#include "MyPlayerController.h"
+#include "Character/Logic/Base_MyCharacter.h"
+#include "Controller/MyPlayerController.h"
 #include "Math/UnrealMathUtility.h"
 
 #pragma region Initialisation

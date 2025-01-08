@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "Base_MyCharacter.h"
+#include "Character/Logic/Base_MyCharacter.h"
 #include "CharacterAnimationInstance.generated.h"
 
 /**

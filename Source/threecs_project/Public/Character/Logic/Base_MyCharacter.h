@@ -8,7 +8,7 @@ class USceneComponent;
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
-#include "CharacterState.h"
+#include "Character/Logic/CharacterState.h"
 #include "Base_MyCharacter.generated.h"
 
 /*

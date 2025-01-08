@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "threecs_project/Public/Base_MyCharacter.h"
+#include "Character/Logic/Base_MyCharacter.h"
 #include "MyCharacter_NoSpringarm.generated.h"
 
 /*
