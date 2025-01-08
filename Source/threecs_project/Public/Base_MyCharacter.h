@@ -72,10 +72,11 @@ private:
 #pragma endregion
 
 #pragma region Rotation
-private:
+public:
 	UFUNCTION(BlueprintCallable)
 	bool ShouldRotateInPlace() const;
 
+private:
 	bool ShouldDoMovingRotation() const;
 
 	void SetTargetCharacterRotation();
@@ -130,7 +131,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	FCharacterMovementSettings MovementSettings;
 
-private:
+public:
 	UFUNCTION(BlueprintCallable)
 	FCharacterMovementSettings GetMovementSettings() const;
 

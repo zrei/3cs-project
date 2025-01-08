@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "threecs_project/Public/Base_MyCharacter.h"
-#include "threecs_project/Public/MyPlayerController.h"
+#include "Base_MyCharacter.h"
+#include "MyPlayerController.h"
 #include "Math/UnrealMathUtility.h"
 
 #pragma region Initialisation
@@ -19,7 +19,8 @@ ABase_MyCharacter::ABase_MyCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(CameraParent);
 
-	MovementSettings.CharacterMovementSpeedChange = 0.15;
+	MovementSettings.CharacterAcceleration = 0.2;
+	MovementSettings.CharacterDecceleration = 0.3;
 	MovementSettings.CharacterRunMovementSpeed = 0.7;
 	MovementSettings.CharacterWalkMovementSpeed = 0.3;
 	MovementSettings.CharacterStationaryRotationalSpeed = 15;
@@ -127,12 +128,12 @@ void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
 {
 	if (TargetCharacterMovementSpeed > CurrCharacterMovementSpeed)
 	{
-		float uncappedMovementSpeed = CurrCharacterMovementSpeed + MovementSettings.CharacterMovementSpeedChange * deltaTime;
+		float uncappedMovementSpeed = CurrCharacterMovementSpeed + MovementSettings.CharacterAcceleration * deltaTime;
 		CurrCharacterMovementSpeed = FMath::Min(uncappedMovementSpeed, TargetCharacterMovementSpeed);
 	}
 	else if (TargetCharacterMovementSpeed < CurrCharacterMovementSpeed)
 	{
-		float uncappedMovementSpeed = CurrCharacterMovementSpeed - MovementSettings.CharacterMovementSpeedChange * deltaTime;
+		float uncappedMovementSpeed = CurrCharacterMovementSpeed - MovementSettings.CharacterDecceleration * deltaTime;
 		CurrCharacterMovementSpeed = FMath::Max(uncappedMovementSpeed, TargetCharacterMovementSpeed);
 	}
 }

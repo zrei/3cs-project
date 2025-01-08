@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "threecs_project/Public/MyCharacter_NoSpringarm.h"
+#include "MyCharacter_NoSpringarm.h"
 
 // Sets default values
 AMyCharacter_NoSpringarm::AMyCharacter_NoSpringarm()
