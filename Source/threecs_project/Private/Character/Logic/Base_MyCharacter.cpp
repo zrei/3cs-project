@@ -114,11 +114,11 @@ void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
 
 void ABase_MyCharacter::Move(float deltaTime)
 {
-	FVector forwardDirection = GetActorForwardVector();
+	FVector forwardDirection = FVector::ForwardVector;
 	float forwardMovementAmount = MovementInput.Y * CurrCharacterMovementSpeed;
 	AddMovementInput(forwardDirection, forwardMovementAmount);
 
-	FVector rightDirection = GetActorRightVector();
+	FVector rightDirection = FVector::RightVector;
 	float rightMovementAmount = MovementInput.X * CurrCharacterMovementSpeed;
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
