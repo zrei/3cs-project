@@ -93,16 +93,16 @@ public:
 	float MovingRotationTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float StationaryRotationThreshold;
+	float RotationThreshold;
 
-	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0),
-		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), StationaryRotationThreshold(0) {}
+	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0), CharacterDecceleration(0),
+		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), RotationThreshold(0) {}
 
-	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterMovementSpeedChange,
+	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterAcceleration, float characterDecceleration,
 		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float movingRotationTime, float fastRotationThreshold)
 		: CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
-		CharacterAcceleration(characterMovementSpeedChange), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
-		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), StationaryRotationThreshold(fastRotationThreshold) {}
+		CharacterAcceleration(characterAcceleration), CharacterDecceleration(characterDecceleration), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
+		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), RotationThreshold(fastRotationThreshold) {}
 };
 
 USTRUCT(BlueprintType)

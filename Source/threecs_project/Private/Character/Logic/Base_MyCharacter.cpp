@@ -26,7 +26,7 @@ ABase_MyCharacter::ABase_MyCharacter()
 	MovementSettings.CharacterStationaryRotationalSpeed = 15;
 	MovementSettings.CharacterMovingRotationalSpeed = 70;
 	MovementSettings.MovingRotationTime = 0.5;
-	MovementSettings.StationaryRotationThreshold = 5;
+	MovementSettings.RotationThreshold = 45;
 
 	CameraSettings.CameraRotationalSpeed = 10;
 	CameraSettings.MaxViewVerticalAngle = 30;
@@ -58,6 +58,9 @@ void ABase_MyCharacter::BeginPlay()
 	CurrViewHorizontalAngle = GetActorRotation().Yaw;
 	CurrCharacterHorizontalAngle = CurrViewHorizontalAngle;
 	TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
+	RotationCurveScaleValue = 1;
+
+	CurrPlayingTurnSequence = nullptr;
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
@@ -70,10 +73,6 @@ void ABase_MyCharacter::BeginPlay()
 	controller->OnCameraMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
 	
 	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
-
-	RotationCurveScaleValue = 1;
-
-	CurrPlayingMontage = nullptr;
 
 	RotateCamera();
 }
@@ -104,6 +103,7 @@ void ABase_MyCharacter::OnCharacterMovementStarted()
 	// reset gait to walk
 	CurrCharacterGait = ECharacterGait::WALK;
 	SetTargetCharacterMovementSpeed();
+	StopCurrentlyPlayingTurningMontage();
 }
 
 void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
@@ -128,8 +128,7 @@ void ABase_MyCharacter::OnCharacterMovementComplete()
 	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	SetTargetCharacterMovementSpeed();
 	SetTargetCharacterRotation();
-	MainAnimInstance->StopSlotAnimation(0.25, LegsSlotName);
-	RotationCurveScaleValue = 1;
+	StopCurrentlyPlayingTurningMontage();
 }
 
 void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
@@ -175,7 +174,6 @@ void ABase_MyCharacter::OnGaitChangeTriggered()
 #pragma region Rotation
 void ABase_MyCharacter::SetTargetCharacterRotation()
 {
-	// set target character horizontal angle to be from 0 - 360
 	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
 	{
 		float rotationFromMovementInput = GetMovementRotation();
@@ -186,7 +184,9 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 		TargetCharacterHorizontalAngle = CurrViewHorizontalAngle;
 	}
 	
+	// set target character horizontal angle to be from 0 - 360
 	TargetCharacterHorizontalAngle = TargetCharacterHorizontalAngle < 0 ? 360 + TargetCharacterHorizontalAngle : TargetCharacterHorizontalAngle;
+
 	// reverse the direction if the angle > 180
 	if (FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > 180)
 	{
@@ -224,52 +224,82 @@ void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 	}
 }
 
+float ABase_MyCharacter::NinetyDegreeRotationCurveAmount = 40;
+float ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount = 80;
+
+bool ABase_MyCharacter::ShouldDoMontageRotation() const
+{
+	return FMath::Abs(TargetCharacterHorizontalAngle - CurrCharacterHorizontalAngle) >= MovementSettings.RotationThreshold;
+}
+
 bool ABase_MyCharacter::ShouldRotateInPlace() const
 {
-	return CurrCharacterMovementState == ECharacterMovementState::IDLE && FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > MovementSettings.StationaryRotationThreshold;
+	return !IsPlayingTurningMontage() && CurrCharacterMovementState == ECharacterMovementState::IDLE && CurrCharacterMovementSpeed == 0 && ShouldDoMontageRotation();
 }
 
 bool ABase_MyCharacter::ShouldDoMovingRotation() const
 {
-	return CurrCharacterMovementState == ECharacterMovementState::MOVING && TargetCharacterHorizontalAngle != CurrCharacterHorizontalAngle && (!CurrPlayingMontage || !MainAnimInstance->IsPlayingSlotAnimation(CurrPlayingMontage, LegsSlotName));
+	return !IsPlayingTurningMontage() && CurrCharacterMovementState == ECharacterMovementState::MOVING && TargetCharacterHorizontalAngle != CurrCharacterHorizontalAngle;
 }
 
-bool ABase_MyCharacter::ShouldDoMontageRotation() const
-{
-	return FMath::Abs(TargetCharacterHorizontalAngle - CurrCharacterHorizontalAngle) >= 45;
-}
-
-TObjectPtr<UAnimSequenceBase> ABase_MyCharacter::GetTurnAnimationAsset()
+void ABase_MyCharacter::SetTurnAnimationAsset()
 {
 	bool shouldDoBigRotation = FMath::Abs(TargetCharacterHorizontalAngle - CurrCharacterHorizontalAngle) > 90;
 	if (CurrRotationDirection == ERotateDirection::LEFT && shouldDoBigRotation)
 	{
-		return TurnLeftMoreThan180Asset;
+		CurrPlayingTurnSequence = TurnLeftMoreThan180Asset;
 	}
 	else if (CurrRotationDirection == ERotateDirection::LEFT && !shouldDoBigRotation)
 	{
-		return TurnLeftLessThan180Asset;
+		CurrPlayingTurnSequence = TurnLeftLessThan180Asset;
 	}
 	else if (CurrRotationDirection == ERotateDirection::RIGHT && shouldDoBigRotation)
 	{
-		return TurnRightMoreThan180Asset;
+		CurrPlayingTurnSequence = TurnRightMoreThan180Asset;
 	}
 	else if (CurrRotationDirection == ERotateDirection::RIGHT && !shouldDoBigRotation)
 	{
-		return TurnRightLessThan180Asset;
+		CurrPlayingTurnSequence = TurnRightLessThan180Asset;
 	}
 	else
 	{
-		return nullptr;
+		CurrPlayingTurnSequence = nullptr;
 	}
 }
 
-void ABase_MyCharacter::UpdateCharacterRotationThroughCurve(float deltaTime)
+void ABase_MyCharacter::SetRotationCurveScaleValue()
+{
+	float diff = FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle);
+	if (diff < 90)
+		RotationCurveScaleValue = diff / ABase_MyCharacter::NinetyDegreeRotationCurveAmount;
+	else
+		RotationCurveScaleValue = diff / ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount;
+}
+
+void ABase_MyCharacter::PlayTurningMontage()
+{
+	SetTurnAnimationAsset();
+	SetRotationCurveScaleValue();
+	float playRate = 1;
+	// scale play rate if moving to match movement speed
+	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
+	{
+		playRate = FMath::Max(MovementSettings.CharacterWalkMovementSpeed / 2, CurrCharacterMovementSpeed) / MovementSettings.CharacterWalkMovementSpeed;
+	}
+	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, LegsSlotName, 0.25, 0.25, playRate);
+}
+
+void ABase_MyCharacter::StopCurrentlyPlayingTurningMontage()
+{
+	MainAnimInstance->StopSlotAnimation(0.25, LegsSlotName);
+}
+
+void ABase_MyCharacter::UpdateCharacterRotationThroughCurve()
 {
 	if (MainAnimInstance)
 	{
-		float rotationCurveValue = MainAnimInstance->GetCurveValue(RotationCurveName);
-		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + rotationCurveValue * MovementSettings.CharacterStationaryRotationalSpeed * deltaTime;
+		float rotationCurveValue = MainAnimInstance->GetCurveValue(RotationCurveName) * RotationCurveScaleValue;		
+		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + rotationCurveValue;			
 		if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
 		{
 			CurrCharacterHorizontalAngle = FMath::Max(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
@@ -281,28 +311,10 @@ void ABase_MyCharacter::UpdateCharacterRotationThroughCurve(float deltaTime)
 	}
 }
 
-void ABase_MyCharacter::UpdateCharacterRotationThroughCurveWhenMoving()
+bool ABase_MyCharacter::IsPlayingTurningMontage() const
 {
-	if (MainAnimInstance)
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Scale value: %f"), RotationCurveScaleValue);
-		float rotationCurveValue = MainAnimInstance->GetCurveValue(RotationCurveName) * RotationCurveScaleValue;
-		if (!CurrPlayingMontage && MainAnimInstance->IsPlayingSlotAnimation(CurrPlayingMontage, LegsSlotName))
-			UE_LOG(LogTemp, Warning, TEXT("Rotation curve value: %f"), rotationCurveValue);
-		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + rotationCurveValue;
-		if (CurrCharacterHorizontalAngle > TargetCharacterHorizontalAngle)
-		{
-			CurrCharacterHorizontalAngle = FMath::Max(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
-		}
-		else if (CurrCharacterHorizontalAngle < TargetCharacterHorizontalAngle)
-		{
-			CurrCharacterHorizontalAngle = FMath::Min(uncappedHorizontalAngle, TargetCharacterHorizontalAngle);
-		}
-	}
+	return CurrPlayingTurnSequence && MainAnimInstance->IsPlayingSlotAnimation(CurrPlayingTurnSequence, LegsSlotName);
 }
-
-float ABase_MyCharacter::NinetyDegreeRotationCurveAmount = 40;
-float ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount = 80;
 #pragma endregion
 
 #pragma region Camera
@@ -349,20 +361,16 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetTargetCharacterRotation();
 	}
 
-	if (ShouldDoMovingRotation())
+	if (IsPlayingTurningMontage())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Should do moving rotation"));
+		UpdateCharacterRotationThroughCurve();
+		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+	}
+	else if (ShouldDoMovingRotation())
+	{
 		if (ShouldDoMontageRotation())
 		{
-			CurrPlayingMontage = GetTurnAnimationAsset();
-			float diff = FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle);
-			if (diff < 180)
-				RotationCurveScaleValue = diff / ABase_MyCharacter::NinetyDegreeRotationCurveAmount;
-			else
-				RotationCurveScaleValue = diff / ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount;
-			UE_LOG(LogScript, Warning, TEXT("Angle diff: %f"), diff);
-			UE_LOG(LogScript, Warning, TEXT("Rotation curva scale value: %f"), RotationCurveScaleValue);
-			MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingMontage, LegsSlotName);
+			PlayTurningMontage();
 		}
 		else
 		{
@@ -372,16 +380,9 @@ void ABase_MyCharacter::Tick(float deltaTime)
 	}
 	else if (ShouldRotateInPlace())
 	{
-		UpdateCharacterRotationThroughCurve(deltaTime);
-		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
-	}
-	else
-	{
-		UpdateCharacterRotationThroughCurveWhenMoving();
-		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+		PlayTurningMontage();
 	}
 	
-
 	SetCharacterMovementSpeed(deltaTime);
 	Move(deltaTime);
 

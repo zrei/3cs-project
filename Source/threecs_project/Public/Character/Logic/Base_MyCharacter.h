@@ -76,7 +76,6 @@ public:
 	bool ShouldRotateInPlace() const;
 
 protected:
-
 	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
 	TObjectPtr<UAnimSequenceBase> TurnLeftLessThan180Asset;
 
@@ -95,15 +94,21 @@ protected:
 private:
 	bool ShouldDoMovingRotation() const;
 
+	bool IsPlayingTurningMontage() const;
+
 	void SetTargetCharacterRotation();
 	
 	void UpdateCharacterMovingRotation(float deltaTime);
 
-	void UpdateCharacterRotationThroughCurve(float deltaTime);
+	void UpdateCharacterRotationThroughCurve();
 
-	void UpdateCharacterRotationThroughCurveWhenMoving();
+	void SetTurnAnimationAsset();
 
-	TObjectPtr<UAnimSequenceBase> GetTurnAnimationAsset();
+	void SetRotationCurveScaleValue();
+
+	void PlayTurningMontage();
+
+	void StopCurrentlyPlayingTurningMontage();
 
 	bool ShouldDoMontageRotation() const;
 
@@ -117,8 +122,7 @@ private:
 
 	float RotationCurveScaleValue;
 
-	TObjectPtr<UAnimSequenceBase> CurrPlayingMontage;
-
+	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
 #pragma endregion
 
 #pragma region Gait
