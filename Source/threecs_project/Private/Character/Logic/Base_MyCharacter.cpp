@@ -185,8 +185,15 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	}
 	
 	// set target character horizontal angle to be from 0 - 360
-	TargetCharacterHorizontalAngle = TargetCharacterHorizontalAngle < 0 ? 360 + TargetCharacterHorizontalAngle : TargetCharacterHorizontalAngle;
-
+	if (TargetCharacterHorizontalAngle < 0)
+	{
+		TargetCharacterHorizontalAngle += 360;
+	}
+	else if (TargetCharacterHorizontalAngle > 360)
+	{
+		TargetCharacterHorizontalAngle -= 360;
+	}
+	
 	// reverse the direction if the angle > 180
 	if (FMath::Abs(CurrCharacterHorizontalAngle - TargetCharacterHorizontalAngle) > 180)
 	{
