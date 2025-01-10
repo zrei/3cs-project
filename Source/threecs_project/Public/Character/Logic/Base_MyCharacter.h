@@ -73,8 +73,24 @@ private:
 
 #pragma region Rotation
 public:
-	UFUNCTION(BlueprintCallable)
 	bool ShouldRotateInPlace() const;
+
+protected:
+
+	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
+	TObjectPtr<UAnimSequenceBase> TurnLeftLessThan180Asset;
+
+	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
+	TObjectPtr<UAnimSequenceBase> TurnRightLessThan180Asset;
+
+	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
+	TObjectPtr<UAnimSequenceBase> TurnLeftMoreThan180Asset;
+
+	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
+	TObjectPtr<UAnimSequenceBase> TurnRightMoreThan180Asset;
+
+	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
+	FName LegsSlotName;
 
 private:
 	bool ShouldDoMovingRotation() const;
@@ -83,11 +99,26 @@ private:
 	
 	void UpdateCharacterMovingRotation(float deltaTime);
 
-	void UpdateCharacterGroundedRotation(float deltaTime);
+	void UpdateCharacterRotationThroughCurve(float deltaTime);
+
+	void UpdateCharacterRotationThroughCurveWhenMoving();
+
+	TObjectPtr<UAnimSequenceBase> GetTurnAnimationAsset();
+
+	bool ShouldDoMontageRotation() const;
 
 	float CurrCharacterHorizontalAngle;
 
 	float TargetCharacterHorizontalAngle;
+
+	static float NinetyDegreeRotationCurveAmount;
+
+	static float OneHundredEightyDegreeRotationCurveAmount;
+
+	float RotationCurveScaleValue;
+
+	TObjectPtr<UAnimSequenceBase> CurrPlayingMontage;
+
 #pragma endregion
 
 #pragma region Gait
@@ -132,10 +163,8 @@ protected:
 	FCharacterMovementSettings MovementSettings;
 
 public:
-	UFUNCTION(BlueprintCallable)
 	FCharacterMovementSettings GetMovementSettings() const;
 
-	UFUNCTION(BlueprintCallable)
 	FCharacterState GetCurrentState() const;
 #pragma endregion
 
