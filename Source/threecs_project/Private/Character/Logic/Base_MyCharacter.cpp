@@ -41,9 +41,9 @@ void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TObjectPtr<USkeletalMeshComponent> skeletalMesh = FindComponentByClass<USkeletalMeshComponent>();
-	if (skeletalMesh)
-		MainAnimInstance = skeletalMesh->GetAnimInstance();
+	SkeletonMesh = FindComponentByClass<USkeletalMeshComponent>();
+	if (SkeletonMesh)
+		MainAnimInstance = SkeletonMesh->GetAnimInstance();
 
 	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	CurrCharacterGait = ECharacterGait::WALK;

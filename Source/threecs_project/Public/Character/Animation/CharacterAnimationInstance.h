@@ -35,6 +35,8 @@ private:
 
 	TObjectPtr<ABase_MyCharacter> CharacterRef;
 
+	TObjectPtr<USkeletalMeshComponent> SkeletalMesh;
+
 	TObjectPtr<UCharacterMovementComponent> CharacterMovementRef;
 
 	FCharacterMovementSettings CharacterMovementSettings;
@@ -59,4 +61,72 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool RotateRight;
+
+#pragma region Foot IK
+protected:
+	UPROPERTY(EditAnywhere)
+	FName LeftFoot;
+
+	UPROPERTY(EditAnywhere)
+	FName RightFoot;
+
+	UPROPERTY(EditAnywhere)
+	FName LeftFootIKCurveName;
+
+	UPROPERTY(EditAnywhere)
+	float IKTraceDistanceAboveFoot;
+
+	UPROPERTY(EditAnywhere)
+	float IKTraceDistanceBelowFoot;
+
+	UPROPERTY(EditAnywhere)
+	float FootHeight;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector FootLockLLocation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FRotator FootLockLRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	float FootLockLAlpha;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector FootLockRLocation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FRotator FootLockRRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	float FootLockRAlpha;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector FootOffsetLLocation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FRotator FootOffsetLRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector FootOffsetRLocation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FRotator FootOffsetRRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector PelvisOffset;
+
+	UPROPERTY(BlueprintReadOnly)
+	float PelvisAlpha;
+
+private:
+	void SetupFootIK();
+
+	void SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName);
+
+	void SetPelvisIKOffset();
+
+	void SetFootLocking();
+
+	void SetFootLockOffsets();
+#pragma endregion
 };
