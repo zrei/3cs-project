@@ -4,6 +4,7 @@
 #include "Character/Logic/Base_MyCharacter.h"
 #include "Controller/MyPlayerController.h"
 #include "Math/UnrealMathUtility.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #pragma region Initialisation
 // Sets default values
@@ -41,9 +42,9 @@ void ABase_MyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SkeletonMesh = FindComponentByClass<USkeletalMeshComponent>();
-	if (SkeletonMesh)
-		MainAnimInstance = SkeletonMesh->GetAnimInstance();
+	TObjectPtr<USkeletalMeshComponent> skeletonMesh = FindComponentByClass<USkeletalMeshComponent>();
+	if (skeletonMesh)
+		MainAnimInstance = skeletonMesh->GetAnimInstance();
 
 	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	CurrCharacterGait = ECharacterGait::WALK;
@@ -114,11 +115,13 @@ void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
 
 void ABase_MyCharacter::Move(float deltaTime)
 {
-	FVector forwardDirection = FVector::ForwardVector;
+	FRotator characterRotation{ 0, CurrViewHorizontalAngle, 0 };
+	
+	FVector forwardDirection = UKismetMathLibrary::GetForwardVector(characterRotation);
 	float forwardMovementAmount = MovementInput.Y * CurrCharacterMovementSpeed;
 	AddMovementInput(forwardDirection, forwardMovementAmount);
 
-	FVector rightDirection = FVector::RightVector;
+	FVector rightDirection = UKismetMathLibrary::GetRightVector(characterRotation);
 	float rightMovementAmount = MovementInput.X * CurrCharacterMovementSpeed;
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
