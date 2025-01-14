@@ -5,7 +5,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-void UCharacterAnimationInstance::AnimationUpdate()
+void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 {
 	if (!CharacterRef)
 		return;
@@ -14,6 +14,8 @@ void UCharacterAnimationInstance::AnimationUpdate()
 	UpdateMovementState();
 	UpdateStride();
 	UpdateInPlaceRotation();
+
+	UpdateFootIK(deltaTime);
 }
 
 void UCharacterAnimationInstance::InitializeCharacterReferences()
@@ -88,6 +90,7 @@ void UCharacterAnimationInstance::SetRotateValues(bool rotateL, bool rotateR)
 	RotateRight = rotateR;
 }
 
+#pragma region Feet IK
 void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset)
 {
 	if (GetCurveValue(enableFootIKCurveName) <= 0)
@@ -134,4 +137,28 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 	{
 		currLocationOffset = UKismetMathLibrary::VInterpTo(currLocationOffset, currLocationTarget, deltaTime, 15);
 	}
+
+	currRotationOffset = UKismetMathLibrary::RInterpTo(currRotationOffset, TargetRotationOffset, deltaTime, 30);
 }
+
+void UCharacterAnimationInstance::UpdateFootIK(float deltaTime)
+{
+	SetFootOffsets(deltaTime, LeftFootIKCurveName, LeftIKFootBoneName, LeftFootRootBoneName, FootOffsetLTarget, FootOffsetLLocation, FootOffsetLRotation);
+	SetFootOffsets(deltaTime, RightFootIKCurveName, RightIKFootBoneName, RightFootRootBoneName, FootOffsetRTarget, FootOffsetRLocation, FootOffsetRRotation);
+}
+
+void UCharacterAnimationInstance::SetPelvisIKOffset(float deltaTime)
+{
+
+}
+
+void UCharacterAnimationInstance::SetFootLocking(float deltaTime)
+{
+
+}
+
+void UCharacterAnimationInstance::SetFootLockOffsets(float deltaTime)
+{
+
+}
+#pragma endregion

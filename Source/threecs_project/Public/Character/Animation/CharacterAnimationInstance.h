@@ -17,7 +17,7 @@ class THREECS_PROJECT_API UCharacterAnimationInstance : public UAnimInstance
 
 protected:
 	UFUNCTION(BlueprintCallable)
-	void AnimationUpdate();
+	void AnimationUpdate(float deltaTime);
 
 	UFUNCTION(BlueprintCallable)
 	void InitializeCharacterReferences();
@@ -65,22 +65,31 @@ protected:
 #pragma region Foot IK
 protected:
 	UPROPERTY(EditAnywhere)
-	FName LeftFoot;
+	FName LeftFootRootBoneName = FName{"root"};
 
 	UPROPERTY(EditAnywhere)
-	FName RightFoot;
+	FName RightFootRootBoneName = FName{"root"};
 
 	UPROPERTY(EditAnywhere)
-	FName LeftFootIKCurveName;
+	FName LeftIKFootBoneName = FName{ "ik_foot_l" };
 
 	UPROPERTY(EditAnywhere)
-	float IKTraceDistanceAboveFoot;
+	FName RightIKFootBoneName = FName{ "ik_foot_r" };
 
 	UPROPERTY(EditAnywhere)
-	float IKTraceDistanceBelowFoot;
+	FName LeftFootIKCurveName = FName{ "Enable_FootIK_L" };;
 
 	UPROPERTY(EditAnywhere)
-	float FootHeight;
+	FName RightFootIKCurveName = FName{ "Enable_FootIK_R" };;
+
+	UPROPERTY(EditAnywhere)
+	float IKTraceDistanceAboveFoot = 50;
+
+	UPROPERTY(EditAnywhere)
+	float IKTraceDistanceBelowFoot = 45;
+
+	UPROPERTY(EditAnywhere)
+	float FootHeight = 13.5;
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector FootLockLLocation;
@@ -107,10 +116,16 @@ protected:
 	FRotator FootOffsetLRotation;
 
 	UPROPERTY(BlueprintReadOnly)
+	FVector FootOffsetLTarget;
+
+	UPROPERTY(BlueprintReadOnly)
 	FVector FootOffsetRLocation;
 
 	UPROPERTY(BlueprintReadOnly)
 	FRotator FootOffsetRRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector FootOffsetRTarget;
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector PelvisOffset;
@@ -119,14 +134,14 @@ protected:
 	float PelvisAlpha;
 
 private:
-	void SetupFootIK();
+	void UpdateFootIK(float deltaTime);
 
-	void SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName);
+	void SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset);
 
-	void SetPelvisIKOffset();
+	void SetPelvisIKOffset(float deltaTime);
 
-	void SetFootLocking();
+	void SetFootLocking(float deltaTime);
 
-	void SetFootLockOffsets();
+	void SetFootLockOffsets(float deltaTime);
 #pragma endregion
 };
