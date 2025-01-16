@@ -99,7 +99,6 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 			ImpactPoint = RV_Hit.ImpactPoint;
 			ImpactNormal = RV_Hit.ImpactNormal;
 
-			UE_LOG(LogTemp, Warning, TEXT("Up vector: %f, %f, %f"), FVector::UpVector.X, FVector::UpVector.Y, FVector::UpVector.Z);
 			currLocationTarget = ImpactNormal * FootHeight + ImpactPoint - (IKFootFloorLocation + FVector::UpVector * FootHeight);
 			double rotatorX = FMath::Atan2(ImpactNormal.Y, ImpactNormal.Z);
 			double rotatorY = FMath::Atan2(ImpactNormal.X, ImpactNormal.Z) * -1;
@@ -185,7 +184,7 @@ void UCharacterAnimationInstance::SetFootLockOffsets(float deltaTime, FVector& l
 		rotationDifference = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRef->GetActorRotation(), CharacterMovementRef->GetLastUpdateRotation());
 	}
 
-	FVector locationDifference = UKismetMathLibrary::LessLess_VectorRotator(VelocityVector * deltaTime, SkeletalMesh->GetComponentRotation());
+	FVector locationDifference = SkeletalMesh->GetComponentRotation().UnrotateVector(VelocityVector * deltaTime);
 
 	localLocation = UKismetMathLibrary::RotateAngleAxis(localLocation - locationDifference, rotationDifference.Yaw, { 0, 0, -1 });
 	
