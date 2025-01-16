@@ -156,6 +156,13 @@ void UCharacterAnimationInstance::SetFootLocking(float deltaTime, FName enableFo
 		return;
 	}
 
+	// disable foot locking if the character is moving
+	if (IsMoving)
+	{
+		currentFootLockAlpha = 0;
+		return;
+	}
+
 	float footLockCurveValue = GetCurveValue(footLockCurveName);
 
 	if (footLockCurveValue >= 0.99 || footLockCurveValue < currentFootLockAlpha)
