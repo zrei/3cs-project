@@ -46,6 +46,8 @@ private:
 	ECharacterMovementState CurrCharacterMovementState;
 
 	ERotateDirection CurrRotationDirection;
+
+	ERotateDirection NextRotationDirection;
 #pragma endregion
 
 #pragma region Character Movement
@@ -114,7 +116,9 @@ private:
 
 	float CurrCharacterHorizontalAngle;
 
-	float TargetCharacterHorizontalAngle;
+	float CurrTargetCharacterHorizontalAngle;
+
+	float NextTargetCharacterHorizontalAngle;
 
 	static float NinetyDegreeRotationCurveAmount;
 
@@ -123,6 +127,8 @@ private:
 	float RotationCurveScaleValue;
 
 	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
+
+	float RotationCountdownTimer;
 #pragma endregion
 
 #pragma region Gait
