@@ -114,6 +114,18 @@ private:
 
 	bool ShouldDoMontageRotation() const;
 
+	inline void ConvertRotation(float& rotation)
+	{
+		if (rotation >= 0)
+		{
+			rotation = -(360 - rotation);
+		}
+		else
+		{
+			rotation = 360 + rotation;
+		}
+	}
+
 	float CurrCharacterHorizontalAngle;
 
 	float CurrTargetCharacterHorizontalAngle;

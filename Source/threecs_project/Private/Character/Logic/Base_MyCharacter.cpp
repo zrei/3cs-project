@@ -202,11 +202,24 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 		NextTargetCharacterHorizontalAngle -= 360;
 	}
 	
-	// reverse the direction if the angle > 180
-	if (FMath::Abs(CurrCharacterHorizontalAngle - NextTargetCharacterHorizontalAngle) > 180)
+	float diff = CurrCharacterHorizontalAngle - NextTargetCharacterHorizontalAngle;
+	
+	
+	if (FMath::Abs(diff) > 180)
 	{
-		NextTargetCharacterHorizontalAngle = -(360 - NextTargetCharacterHorizontalAngle);
+		// reverse the direction of the curr angle if diff > 180
+		if (diff > 0)
+		{
+			ConvertRotation(CurrCharacterHorizontalAngle);
+		}
+		// reverse the direction of the curr angle if diff < 180
+		else
+		{
+			ConvertRotation(NextTargetCharacterHorizontalAngle);
+		}
 	}
+
+	diff = CurrCharacterHorizontalAngle - NextTargetCharacterHorizontalAngle;
 
 	if (CurrCharacterHorizontalAngle > NextTargetCharacterHorizontalAngle)
 	{
@@ -226,12 +239,12 @@ void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 {
 	// lerp the rotation of the character towards the target horizontal angle
 	// TODO: Handle small differences and large differences
-	if (CurrCharacterHorizontalAngle > CurrTargetCharacterHorizontalAngle)
+	if (CurrRotationDirection == ERotateDirection::LEFT)
 	{
 		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle - MovementSettings.CharacterMovingRotationalSpeed * deltaTime;
 		CurrCharacterHorizontalAngle = FMath::Max(uncappedHorizontalAngle, CurrTargetCharacterHorizontalAngle);
 	}
-	else if (CurrCharacterHorizontalAngle < CurrTargetCharacterHorizontalAngle)
+	else if (CurrRotationDirection == ERotateDirection::RIGHT)
 	{
 		float uncappedHorizontalAngle = CurrCharacterHorizontalAngle + MovementSettings.CharacterMovingRotationalSpeed * deltaTime;
 		CurrCharacterHorizontalAngle = FMath::Min(uncappedHorizontalAngle, CurrTargetCharacterHorizontalAngle);

@@ -84,11 +84,9 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 	FVector LineTraceStart{ IKFootFloorLocation.X, IKFootFloorLocation.Y, IKFootFloorLocation.Z + IKTraceDistanceAboveFoot };
 	FVector LineTraceEnd{ IKFootFloorLocation.X, IKFootFloorLocation.Y, IKFootFloorLocation.Z - IKTraceDistanceBelowFoot };
 	
-	//Re-initialize hit info
+	//initialize hit info
 	FHitResult RV_Hit(ForceInit);
 
-	FVector ImpactPoint;
-	FVector ImpactNormal;
 	FRotator TargetRotationOffset;
 
 	ETraceTypeQuery TraceChannel = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
@@ -96,12 +94,9 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 	{
 		if (CharacterMovementRef->IsWalkable(RV_Hit))
 		{
-			ImpactPoint = RV_Hit.ImpactPoint;
-			ImpactNormal = RV_Hit.ImpactNormal;
-
-			currLocationTarget = ImpactNormal * FootHeight + ImpactPoint - (IKFootFloorLocation + FVector::UpVector * FootHeight);
-			double rotatorX = FMath::Atan2(ImpactNormal.Y, ImpactNormal.Z);
-			double rotatorY = FMath::Atan2(ImpactNormal.X, ImpactNormal.Z) * -1;
+			currLocationTarget = RV_Hit.ImpactNormal * FootHeight + RV_Hit.ImpactPoint - (IKFootFloorLocation + FVector::UpVector * FootHeight);
+			double rotatorX = FMath::Atan2(RV_Hit.ImpactNormal.Y, RV_Hit.ImpactNormal.Z);
+			double rotatorY = FMath::Atan2(RV_Hit.ImpactNormal.X, RV_Hit.ImpactNormal.Z) * -1;
 			TargetRotationOffset = {rotatorX, rotatorY, 0};
 		}
 	}
