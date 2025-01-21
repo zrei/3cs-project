@@ -180,6 +180,9 @@ void ABase_MyCharacter::OnGaitChangeTriggered()
 #pragma endregion
 
 #pragma region Rotation
+float ABase_MyCharacter::NinetyDegreeRotationCurveAmount = 40;
+float ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount = 80;
+
 void ABase_MyCharacter::SetTargetCharacterRotation()
 {
 	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
@@ -204,7 +207,6 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	
 	float diff = CurrCharacterHorizontalAngle - NextTargetCharacterHorizontalAngle;
 	
-	
 	if (FMath::Abs(diff) > 180)
 	{
 		// reverse the direction of the curr angle if diff > 180
@@ -212,7 +214,7 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 		{
 			ConvertRotation(CurrCharacterHorizontalAngle);
 		}
-		// reverse the direction of the curr angle if diff < 180
+		// reverse the direction of the target angle if diff < 180
 		else
 		{
 			ConvertRotation(NextTargetCharacterHorizontalAngle);
@@ -250,9 +252,6 @@ void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 		CurrCharacterHorizontalAngle = FMath::Min(uncappedHorizontalAngle, CurrTargetCharacterHorizontalAngle);
 	}
 }
-
-float ABase_MyCharacter::NinetyDegreeRotationCurveAmount = 40;
-float ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount = 80;
 
 bool ABase_MyCharacter::ShouldDoMontageRotation() const
 {
@@ -411,6 +410,7 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		}
 		else if (ShouldRotateInPlace())
 		{
+			// TODO: Clean this up
 			RotationCountdownTimer += deltaTime;
 			if (RotationCountdownTimer >= MovementSettings.RotationLookTimeThreshold)
 			{
