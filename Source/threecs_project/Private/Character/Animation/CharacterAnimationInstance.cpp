@@ -32,6 +32,7 @@ void UCharacterAnimationInstance::InitializeCharacterReferences()
 	SkeletalMesh = GetOwningComponent();
 }
 
+#pragma region Locomotion
 void UCharacterAnimationInstance::UpdateMovementState()
 {
 	if (CharacterRef)
@@ -40,6 +41,7 @@ void UCharacterAnimationInstance::UpdateMovementState()
 		double velocity = UKismetMathLibrary::VSizeXY(VelocityVector);
 		IsMoving = velocity > 0;
 		IsFalling = CharacterMovementRef->IsFalling();
+		CurrTurnBlendAlpha = IsMoving ? MovingTurnBlendAlpha : StationaryTurnBlendAlpha;
 	}
 }
 
@@ -57,6 +59,7 @@ void UCharacterAnimationInstance::UpdateStride()
 		MovementSpeed = Stride;
 	}
 }
+#pragma endregion
 
 #pragma region Feet IK
 void UCharacterAnimationInstance::UpdateFootIK(float deltaTime)

@@ -8,7 +8,8 @@
 #include "CharacterAnimationInstance.generated.h"
 
 /**
- * 
+ * UAnimInstance to function as the base class for the character animation BP.
+ * Implements the logic to calculate the variables that will be used to drive the animation.
  */
 UCLASS()
 class THREECS_PROJECT_API UCharacterAnimationInstance : public UAnimInstance
@@ -41,9 +42,9 @@ private:
 
 	FCharacterState CurrCharacterState;
 
-protected:
 	FVector VelocityVector;
 
+protected:
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	bool IsMoving;
 
@@ -57,7 +58,19 @@ protected:
 	float Stride;
 #pragma endregion
 
-#pragma region Foot IK
+#pragma region Turning
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn Settings")
+	float MovingTurnBlendAlpha = 0.5;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn Settings")
+	float StationaryTurnBlendAlpha = 1;
+
+	UPROPERTY(BlueprintReadOnly, Category="Turn Settings")
+	float CurrTurnBlendAlpha;
+#pragma endregion
+
+#pragma region Feet IK Settings
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
 	FName LeftFootRootBoneName = FName{"root"};
@@ -91,7 +104,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
 	float FootHeight = 13.5;
+#pragma endregion
 
+#pragma region Feet IK
+protected:
 	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
 	FVector FootLockLLocation;
 
