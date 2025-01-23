@@ -93,16 +93,19 @@ public:
 	float MovingRotationTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RotationThreshold;
+	float RotationAngleThreshold;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RotationLookTimeThreshold;
 
 	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0), CharacterDecceleration(0),
-		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), RotationThreshold(0) {}
+		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), RotationAngleThreshold(0), RotationLookTimeThreshold(0) {}
 
 	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterAcceleration, float characterDecceleration,
-		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float movingRotationTime, float fastRotationThreshold)
+		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float movingRotationTime, float rotationAngleThreshold, float rotationLookTimeThreshold)
 		: CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
 		CharacterAcceleration(characterAcceleration), CharacterDecceleration(characterDecceleration), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
-		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), RotationThreshold(fastRotationThreshold) {}
+		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), RotationAngleThreshold(rotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold) {}
 };
 
 USTRUCT(BlueprintType)

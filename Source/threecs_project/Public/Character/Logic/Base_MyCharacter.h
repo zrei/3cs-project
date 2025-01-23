@@ -16,7 +16,7 @@ View direction is calculated and stored whenever the camera is adjusted.
 
 When moving, the forward direction will follow the camera view, with movement
 in other directions changing the target character rotation. Character rotation
-is always lerped.
+is mostly driven by a turn animation montage.
 
 When stationary, character will turn to follow the camera view.
 
@@ -46,6 +46,8 @@ private:
 	ECharacterMovementState CurrCharacterMovementState;
 
 	ERotateDirection CurrRotationDirection;
+
+	ERotateDirection NextRotationDirection;
 #pragma endregion
 
 #pragma region Character Movement
@@ -72,9 +74,6 @@ private:
 #pragma endregion
 
 #pragma region Rotation
-public:
-	bool ShouldRotateInPlace() const;
-
 protected:
 	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
 	TObjectPtr<UAnimSequenceBase> TurnLeftLessThan180Asset;
@@ -92,6 +91,8 @@ protected:
 	FName LegsSlotName;
 
 private:
+	bool ShouldRotateInPlace() const;
+
 	bool ShouldDoMovingRotation() const;
 
 	bool IsPlayingTurningMontage() const;
@@ -112,13 +113,29 @@ private:
 
 	bool ShouldDoMontageRotation() const;
 
-	float CurrCharacterHorizontalAngle;
-
-	float TargetCharacterHorizontalAngle;
+	inline void ConvertRotation(float& rotation)
+	{
+		if (rotation >= 0)
+		{
+			rotation = -(360 - rotation);
+		}
+		else
+		{
+			rotation = 360 + rotation;
+		}
+	}
 
 	static float NinetyDegreeRotationCurveAmount;
 
 	static float OneHundredEightyDegreeRotationCurveAmount;
+
+	float RotationCountdownTimer;
+
+	float CurrCharacterHorizontalAngle;
+
+	float CurrTargetCharacterHorizontalAngle;
+
+	float NextTargetCharacterHorizontalAngle;
 
 	float RotationCurveScaleValue;
 
@@ -154,11 +171,11 @@ private:
 
 	void OnCameraMovementComplete();
 
+	void SetTargetCameraRotation(float deltaTime);
+
 	bool HasCameraInput;
 
-	FVector2D CameraInput;
-
-	void SetTargetCameraRotation(float deltaTime);
+	FVector2D CameraInput;	
 #pragma endregion
 
 #pragma region Movement and Rotation Info
