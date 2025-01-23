@@ -116,6 +116,11 @@ void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
 	MovementInput = movementVector;
 	SetTargetCharacterRotation();
 	RotationCountdownTimer = 0;
+
+	if (NextTargetCharacterHorizontalAngle != CurrTargetCharacterHorizontalAngle)
+	{
+		StopCurrentlyPlayingTurningMontage();
+	}
 }
 
 void ABase_MyCharacter::Move(float deltaTime)
