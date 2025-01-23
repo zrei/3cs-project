@@ -49,19 +49,22 @@ public:
 	float CurrCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	float CurrLookPitch;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float CurrCharacterSpeed;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float TargetCharacterSpeed;
 
 	FCharacterState() : CharacterMovementState(ECharacterMovementState::IDLE), RotationDirection(ERotateDirection::NONE),
-		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), CurrCharacterRotation(0), CurrCharacterSpeed(0),
+		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookPitch(0), CurrCharacterSpeed(0),
 		TargetCharacterSpeed(0) {}
 
 	FCharacterState(ECharacterMovementState characterMovementState, ERotateDirection rotateDirection,
-		ECharacterGait characterGait, float targetCharacterRotation, float currCharacterRotation, float currCharacterSpeed,
+		ECharacterGait characterGait, float targetCharacterRotation, float currLookPitch, float currCharacterRotation, float currCharacterSpeed,
 		float targetCharacterSpeed) : CharacterMovementState(characterMovementState), RotationDirection(rotateDirection),
-		CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), CurrCharacterRotation(currCharacterRotation),
+		CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), CurrCharacterRotation(currCharacterRotation), CurrLookPitch(currLookPitch),
 		CurrCharacterSpeed(currCharacterSpeed), TargetCharacterSpeed(targetCharacterSpeed) {}
 };
 

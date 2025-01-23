@@ -70,6 +70,26 @@ protected:
 	float CurrTurnBlendAlpha;
 #pragma endregion
 
+#pragma region Look
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Look")
+	float LookPitch;
+
+	UPROPERTY(BlueprintReadOnly, Category="Look")
+	float LookRoll;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
+	float LookPitchInterpolationSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
+	float LookRollInterpolationSpeed;
+
+private:
+	void UpdateLookState();
+
+	FCameraSettings CameraSettings;
+#pragma endregion
+
 #pragma region Feet IK Settings
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")

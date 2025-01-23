@@ -61,6 +61,16 @@ void UCharacterAnimationInstance::UpdateStride()
 }
 #pragma endregion
 
+#pragma region Look
+void UCharacterAnimationInstance::UpdateLookState()
+{
+	float diff = CurrCharacterState.TargetCharacterRotation - CurrCharacterState.CurrCharacterRotation;
+	LookRoll = FMath::Clamp(diff / 90, -1, 1);
+	LookRoll = (LookRoll + 1) / 2;
+	LookPitch = CurrCharacterState.CurrLookPitch / FMath::Max(FMath::Abs(CameraSettings.MaxViewVerticalAngle), FMath::Abs(CameraSettings.MinViewVerticalAngle));
+}
+#pragma endregion
+
 #pragma region Feet IK
 void UCharacterAnimationInstance::UpdateFootIK(float deltaTime)
 {
