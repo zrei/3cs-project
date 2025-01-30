@@ -34,6 +34,10 @@ private:
 
 	void UpdateStride();
 
+	void OnCharacterMovementStateChanged(ECharacterMovementState prevState, ECharacterMovementState currState);
+
+	void ResetJumpState();
+
 	TObjectPtr<ABase_MyCharacter> CharacterRef;
 
 	TObjectPtr<UCharacterMovementComponent> CharacterMovementRef;
@@ -43,6 +47,8 @@ private:
 	FCharacterState CurrCharacterState;
 
 	FVector VelocityVector;
+
+	FTimerHandle JumpTimerHandle;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
@@ -56,6 +62,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	float Stride;
+
+	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
+	bool IsJumping;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Locomotion")
+	float JumpTime;
 #pragma endregion
 
 #pragma region Turning
@@ -85,9 +97,17 @@ protected:
 	float LookRollInterpolationSpeed;
 
 private:
-	void UpdateLookState();
+	void UpdateLookState(float deltaTime);
 
-	FCameraSettings CameraSettings;
+	/*
+	In world space
+	*/
+	float CurrLookPitch;
+
+	/*
+	In world space
+	*/
+	float CurrLookRoll;
 #pragma endregion
 
 #pragma region Feet IK Settings

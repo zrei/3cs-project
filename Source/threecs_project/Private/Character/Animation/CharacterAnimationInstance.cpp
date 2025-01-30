@@ -13,6 +13,8 @@ void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 	UpdateCharacterState();
 	UpdateMovementState();
 	UpdateStride();
+	
+	UpdateLookState(deltaTime);
 
 	UpdateFootIK(deltaTime);
 }
@@ -47,8 +49,26 @@ void UCharacterAnimationInstance::UpdateMovementState()
 
 void UCharacterAnimationInstance::UpdateCharacterState()
 {
+	ECharacterMovementState prevMovementState = CurrCharacterState.CharacterMovementState;
 	if (CharacterRef)
 		CurrCharacterState = CharacterRef->GetCurrentState();
+	ECharacterMovementState currMovementState = CurrCharacterState.CharacterMovementState;
+	if (prevMovementState != currMovementState)
+		OnCharacterMovementStateChanged(prevMovementState, currMovementState);
+}
+
+void UCharacterAnimationInstance::OnCharacterMovementStateChanged(ECharacterMovementState prevState, ECharacterMovementState currState)
+{
+	if (currState == ECharacterMovementState::JUMPING)
+	{
+		IsJumping = true;
+		GetWorld()->GetTimerManager().SetTimer(JumpTimerHandle, this, &UCharacterAnimationInstance::ResetJumpState, JumpTime, false);
+	}
+	else if (prevState == ECharacterMovementState::JUMPING)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(JumpTimerHandle);
+		IsJumping = false;
+	}
 }
 
 void UCharacterAnimationInstance::UpdateStride()
@@ -59,15 +79,21 @@ void UCharacterAnimationInstance::UpdateStride()
 		MovementSpeed = Stride;
 	}
 }
+
+void UCharacterAnimationInstance::ResetJumpState()
+{
+	IsJumping = false;
+}
 #pragma endregion
 
 #pragma region Look
-void UCharacterAnimationInstance::UpdateLookState()
+void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 {
 	float diff = CurrCharacterState.TargetCharacterRotation - CurrCharacterState.CurrCharacterRotation;
-	LookRoll = FMath::Clamp(diff / 90, -1, 1);
-	LookRoll = (LookRoll + 1) / 2;
-	LookPitch = CurrCharacterState.CurrLookPitch / FMath::Max(FMath::Abs(CameraSettings.MaxViewVerticalAngle), FMath::Abs(CameraSettings.MinViewVerticalAngle));
+	float targetLookRoll = (FMath::Clamp(diff/90, -1, 1) + 1) / 2;
+	LookRoll = FMath::FInterpTo(LookRoll, targetLookRoll, deltaTime, LookRollInterpolationSpeed);
+	float targetLookPitch = FMath::Clamp(CurrCharacterState.CurrLookPitch, -90, 90);
+	LookPitch = FMath::FInterpTo(LookPitch, targetLookPitch, deltaTime, LookPitchInterpolationSpeed);
 }
 #pragma endregion
 

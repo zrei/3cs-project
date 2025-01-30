@@ -9,7 +9,8 @@ UENUM(BlueprintType)
 enum class ECharacterMovementState : uint8
 {
 	IDLE UMETA(DisplayName = "Idle"),
-	MOVING UMETA(DisplayName = "Moving")
+	MOVING UMETA(DisplayName = "Moving"),
+	JUMPING UMETA(DisplayName = "Jumping")
 };
 
 UENUM(BlueprintType)
@@ -62,7 +63,7 @@ public:
 		TargetCharacterSpeed(0) {}
 
 	FCharacterState(ECharacterMovementState characterMovementState, ERotateDirection rotateDirection,
-		ECharacterGait characterGait, float targetCharacterRotation, float currLookPitch, float currCharacterRotation, float currCharacterSpeed,
+		ECharacterGait characterGait, float targetCharacterRotation, float currCharacterRotation, float currLookPitch, float currCharacterSpeed,
 		float targetCharacterSpeed) : CharacterMovementState(characterMovementState), RotationDirection(rotateDirection),
 		CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), CurrCharacterRotation(currCharacterRotation), CurrLookPitch(currLookPitch),
 		CurrCharacterSpeed(currCharacterSpeed), TargetCharacterSpeed(targetCharacterSpeed) {}

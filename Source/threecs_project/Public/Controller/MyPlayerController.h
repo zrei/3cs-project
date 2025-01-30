@@ -30,6 +30,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
 	TObjectPtr<UInputAction> CharacterMovementInputAction;
 
+	UPROPERTY(EditAnywhere, Category = "Enhanced Input - Character Movement")
+	TObjectPtr<UInputAction> JumpInputAction;
+
 private:
 	void CharacterMovementInputStarted(const FInputActionInstance& Instance);
 
@@ -37,12 +40,18 @@ private:
 
 	void CharacterMovementInputComplete(const FInputActionInstance& Instance);
 
+	// abstract this to a struct
+	void CharacterJumpInputTriggered(const FInputActionInstance& Instance);
+
 public:
 	FNoParamsDelegate OnCharacterMovementInputStarted;
 
 	FVector2Delegate OnCharacterMovementInputTriggered;
 
 	FNoParamsDelegate OnCharacterMovementInputComplete;
+
+	FNoParamsDelegate OnJumpInputTriggered;
+
 #pragma endregion
 
 #pragma region Gait

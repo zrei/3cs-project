@@ -51,6 +51,9 @@ private:
 #pragma endregion
 
 #pragma region Character Movement
+public:
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
+
 private:
 	void OnCharacterMovementTriggered(FVector2D movementVector);
 
@@ -65,6 +68,8 @@ private:
 	void SetTargetCharacterMovementSpeed();
 
 	float GetMovementRotation() const;
+
+	void OnCharacterJump();
 
 	float CurrCharacterMovementSpeed;
 

@@ -79,6 +79,8 @@ void ABase_MyCharacter::BeginPlay()
 	
 	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
 
+	controller->OnJumpInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
+
 	RotateCamera();
 }
 
@@ -173,6 +175,26 @@ float ABase_MyCharacter::GetMovementRotation() const
 	if (MovementInput.X < 0)
 		movementRotation = -movementRotation;
 	return movementRotation;
+}
+
+void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, uint8 previousCustomMode)
+{
+	Super::OnMovementModeChanged(prevMovementMode, previousCustomMode);
+
+	if (prevMovementMode == EMovementMode::MOVE_Falling)
+	{
+		CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	}
+}
+
+void ABase_MyCharacter::OnCharacterJump()
+{
+	// cannot jump while already jumping
+	if (CurrCharacterMovementState == ECharacterMovementState::JUMPING)
+		return;
+	Jump();
+	CurrCharacterMovementState = ECharacterMovementState::JUMPING;
+	StopCurrentlyPlayingTurningMontage();
 }
 #pragma endregion
 
@@ -380,7 +402,7 @@ FCharacterMovementSettings ABase_MyCharacter::GetMovementSettings() const
 FCharacterState ABase_MyCharacter::GetCurrentState() const
 {
 	return FCharacterState{ CurrCharacterMovementState, CurrRotationDirection, CurrCharacterGait,
-		CurrTargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed };
+		CurrTargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrViewVerticalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed };
 }
 #pragma endregion
 
@@ -392,44 +414,48 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetTargetCharacterRotation();
 	}
 
-	if (IsPlayingTurningMontage())
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
 	{
-		UpdateCharacterRotationThroughCurve();
-		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
-	}
-	else
-	{
-		CurrTargetCharacterHorizontalAngle = NextTargetCharacterHorizontalAngle;
-		CurrRotationDirection = NextRotationDirection;
-		if (ShouldDoMovingRotation())
+		if (IsPlayingTurningMontage())
 		{
-			if (ShouldDoMontageRotation())
-			{
-				PlayTurningMontage();
-			}
-			else
-			{
-				UpdateCharacterMovingRotation(deltaTime);
-				SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
-			}
-		}
-		else if (ShouldRotateInPlace())
-		{
-			// TODO: Clean this up
-			RotationCountdownTimer += deltaTime;
-			if (RotationCountdownTimer >= MovementSettings.RotationLookTimeThreshold)
-			{
-				RotationCountdownTimer = 0;
-				PlayTurningMontage();
-			}
+			UpdateCharacterRotationThroughCurve();
+			SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 		}
 		else
 		{
-			RotationCountdownTimer = 0;
+			CurrTargetCharacterHorizontalAngle = NextTargetCharacterHorizontalAngle;
+			CurrRotationDirection = NextRotationDirection;
+			if (ShouldDoMovingRotation())
+			{
+				if (ShouldDoMontageRotation())
+				{
+					PlayTurningMontage();
+				}
+				else
+				{
+					UpdateCharacterMovingRotation(deltaTime);
+					SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+				}
+			}
+			else if (ShouldRotateInPlace())
+			{
+				// TODO: Clean this up
+				RotationCountdownTimer += deltaTime;
+				if (RotationCountdownTimer >= MovementSettings.RotationLookTimeThreshold)
+				{
+					RotationCountdownTimer = 0;
+					PlayTurningMontage();
+				}
+			}
+			else
+			{
+				RotationCountdownTimer = 0;
+			}
 		}
+
+		SetCharacterMovementSpeed(deltaTime);
 	}
 	
-	SetCharacterMovementSpeed(deltaTime);
 	Move(deltaTime);
 
 	RotateCamera();

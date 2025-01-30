@@ -27,6 +27,8 @@ void AMyPlayerController::SetupInputComponent()
 	Input->BindAction(CameraInputAction, ETriggerEvent::Started, this, &AMyPlayerController::CameraMovementInputStarted);
 	Input->BindAction(CameraInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CameraMovementInputTriggered);
 	Input->BindAction(CameraInputAction, ETriggerEvent::Completed, this, &AMyPlayerController::CameraMovementInputComplete);
+
+	Input->BindAction(JumpInputAction, ETriggerEvent::Triggered, this, &AMyPlayerController::CharacterJumpInputTriggered);
 	
 	Input->BindAction(CharacterGaitChangeInputAction, ETriggerEvent::Started, this, &AMyPlayerController::GaitChangeInputStarted);
 }
@@ -47,6 +49,11 @@ void AMyPlayerController::CharacterMovementInputTriggered(const FInputActionInst
 void AMyPlayerController::CharacterMovementInputComplete(const FInputActionInstance& Instance)
 {
 	OnCharacterMovementInputComplete.Broadcast();
+}
+
+void AMyPlayerController::CharacterJumpInputTriggered(const FInputActionInstance& Instance)
+{
+	OnJumpInputTriggered.Broadcast();
 }
 #pragma endregion
 
