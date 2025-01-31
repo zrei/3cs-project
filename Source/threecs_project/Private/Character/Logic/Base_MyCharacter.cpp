@@ -5,6 +5,7 @@
 #include "Controller/MyPlayerController.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "InputMappingContext.h"
 
 #pragma region Initialisation
 // Sets default values
@@ -69,17 +70,19 @@ void ABase_MyCharacter::BeginPlay()
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	controller->OnCharacterMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
-	controller->OnCharacterMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
-	controller->OnCharacterMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
 	
-	controller->OnCameraMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
-	controller->OnCameraMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
-	controller->OnCameraMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
+	FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
+	cameraMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
+	cameraMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
+	cameraMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
 	
-	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
+	controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
 
-	controller->OnJumpInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
+	controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
 
 	RotateCamera();
 }
@@ -90,21 +93,25 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (controller)
 	{
-		controller->OnCharacterMovementInputStarted.RemoveAll(this);
-		controller->OnCharacterMovementInputTriggered.RemoveAll(this);
-		controller->OnCharacterMovementInputComplete.RemoveAll(this);
-		
-		controller->OnCameraMovementInputStarted.RemoveAll(this);
-		controller->OnCameraMovementInputTriggered.RemoveAll(this);
-		controller->OnCameraMovementInputComplete.RemoveAll(this);
-		
-		controller->OnGaitChangeInputStarted.RemoveAll(this);
+		FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+		locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
+		locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+		locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+
+		FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
+		cameraMovementWrapper.ActionStartedEvent.RemoveAll(this);
+		cameraMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+		cameraMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+
+		controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.RemoveAll(this);
+
+		controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
 	}
 }
 #pragma endregion
 
 #pragma region Movement
-void ABase_MyCharacter::OnCharacterMovementStarted()
+void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _)
 {
 	CurrCharacterMovementState = ECharacterMovementState::MOVING;
 	// reset gait to walk
@@ -113,9 +120,9 @@ void ABase_MyCharacter::OnCharacterMovementStarted()
 	StopCurrentlyPlayingTurningMontage();
 }
 
-void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
+void ABase_MyCharacter::OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
-	MovementInput = movementVector;
+	MovementInput = inputActionInstance.GetValue().Get<FVector2D>();
 	SetTargetCharacterRotation();
 	RotationCountdownTimer = 0;
 
@@ -138,7 +145,7 @@ void ABase_MyCharacter::Move(float deltaTime)
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
 
-void ABase_MyCharacter::OnCharacterMovementComplete()
+void ABase_MyCharacter::OnCharacterMovementComplete(const FInputActionInstance& _)
 {
 	CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	SetTargetCharacterMovementSpeed();
@@ -187,7 +194,7 @@ void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, ui
 	}
 }
 
-void ABase_MyCharacter::OnCharacterJump()
+void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
 {
 	// cannot jump while already jumping
 	if (CurrCharacterMovementState == ECharacterMovementState::JUMPING)
@@ -199,7 +206,7 @@ void ABase_MyCharacter::OnCharacterJump()
 #pragma endregion
 
 #pragma region Gait
-void ABase_MyCharacter::OnGaitChangeTriggered()
+void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 {
 	CurrCharacterGait = CurrCharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
 	SetTargetCharacterMovementSpeed();
@@ -371,17 +378,17 @@ bool ABase_MyCharacter::IsPlayingTurningMontage() const
 #pragma endregion
 
 #pragma region Camera
-void ABase_MyCharacter::OnCameraMovementStarted()
+void ABase_MyCharacter::OnCameraMovementStarted(const FInputActionInstance& _)
 {
 	HasCameraInput = true;
 }
 
-void ABase_MyCharacter::OnCameraMovementTriggered(FVector2D cameraVector)
+void ABase_MyCharacter::OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
-	CameraInput = cameraVector;
+	CameraInput = inputActionInstance.GetValue().Get<FVector2D>();
 }
 
-void ABase_MyCharacter::OnCameraMovementComplete()
+void ABase_MyCharacter::OnCameraMovementComplete(const FInputActionInstance& _)
 {
 	HasCameraInput = false;
 }

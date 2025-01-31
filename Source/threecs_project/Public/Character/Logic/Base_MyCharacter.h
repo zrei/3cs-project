@@ -4,6 +4,7 @@
 
 class UCameraComponent;
 class USceneComponent;
+struct FInputActionInstance;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -55,11 +56,11 @@ public:
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 
 private:
-	void OnCharacterMovementTriggered(FVector2D movementVector);
+	void OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance);
 
-	void OnCharacterMovementStarted();
+	void OnCharacterMovementStarted(const FInputActionInstance& inputActionInstance);
 
-	void OnCharacterMovementComplete();
+	void OnCharacterMovementComplete(const FInputActionInstance& inputActionInstance);
 
 	void Move(float deltaTime);
 
@@ -69,7 +70,7 @@ private:
 
 	float GetMovementRotation() const;
 
-	void OnCharacterJump();
+	void OnCharacterJump(const FInputActionInstance& inputActionInstance);
 
 	float CurrCharacterMovementSpeed;
 
@@ -149,7 +150,7 @@ private:
 
 #pragma region Gait
 private:
-	void OnGaitChangeTriggered();
+	void OnGaitChangeTriggered(const FInputActionInstance& inputActionInstance);
 #pragma endregion
 
 #pragma region Camera
@@ -165,16 +166,16 @@ protected:
 
 	virtual void RotateCamera() PURE_VIRTUAL(ABase_MyCharacter::RotateCamera)
 
-	virtual void OnCameraMovementTriggered(FVector2D cameraVector);
+	virtual void OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance);
 
 	float CurrViewVerticalAngle;
 
 	float CurrViewHorizontalAngle;
 
 private:
-	void OnCameraMovementStarted();
+	void OnCameraMovementStarted(const FInputActionInstance& inputActionInstance);
 
-	void OnCameraMovementComplete();
+	void OnCameraMovementComplete(const FInputActionInstance& inputActionInstance);
 
 	void SetTargetCameraRotation(float deltaTime);
 
