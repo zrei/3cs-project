@@ -113,7 +113,8 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 #pragma region Movement
 void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _)
 {
-	CurrCharacterMovementState = ECharacterMovementState::MOVING;
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
+		CurrCharacterMovementState = ECharacterMovementState::MOVING;
 	// reset gait to walk
 	CurrCharacterGait = ECharacterGait::WALK;
 	SetTargetCharacterMovementSpeed();
@@ -123,6 +124,7 @@ void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _
 void ABase_MyCharacter::OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
 	MovementInput = inputActionInstance.GetValue().Get<FVector2D>();
+	MovementInput.Normalize();
 	SetTargetCharacterRotation();
 	RotationCountdownTimer = 0;
 
@@ -147,10 +149,12 @@ void ABase_MyCharacter::Move(float deltaTime)
 
 void ABase_MyCharacter::OnCharacterMovementComplete(const FInputActionInstance& _)
 {
-	CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
+		CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	MovementInput = FVector2D::Zero();
 	SetTargetCharacterMovementSpeed();
 	SetTargetCharacterRotation();
-	StopCurrentlyPlayingTurningMontage();
+	StopCurrentlyPlayingTurningMontage();	
 }
 
 void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
@@ -190,7 +194,10 @@ void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, ui
 
 	if (prevMovementMode == EMovementMode::MOVE_Falling)
 	{
-		CurrCharacterMovementState = ECharacterMovementState::IDLE;
+		if (MovementInput != FVector2D::Zero())
+			CurrCharacterMovementState = ECharacterMovementState::MOVING;
+		else
+			CurrCharacterMovementState = ECharacterMovementState::IDLE;
 	}
 }
 
@@ -199,15 +206,17 @@ void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
 	// cannot jump while already jumping
 	if (CurrCharacterMovementState == ECharacterMovementState::JUMPING)
 		return;
+	StopCurrentlyPlayingTurningMontage();
 	Jump();
 	CurrCharacterMovementState = ECharacterMovementState::JUMPING;
-	StopCurrentlyPlayingTurningMontage();
 }
 #pragma endregion
 
 #pragma region Gait
 void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 {
+	if (CurrCharacterMovementState != ECharacterMovementState::MOVING)
+		return;
 	CurrCharacterGait = CurrCharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
 	SetTargetCharacterMovementSpeed();
 }
@@ -462,7 +471,14 @@ void ABase_MyCharacter::Tick(float deltaTime)
 
 		SetCharacterMovementSpeed(deltaTime);
 	}
-	
+	else
+	{
+		CurrTargetCharacterHorizontalAngle = NextTargetCharacterHorizontalAngle;
+		CurrRotationDirection = NextRotationDirection;
+		UpdateCharacterMovingRotation(deltaTime);
+		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+	}
+
 	Move(deltaTime);
 
 	RotateCamera();
