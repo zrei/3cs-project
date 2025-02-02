@@ -5,6 +5,7 @@
 #include "Controller/MyPlayerController.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "InputMappingContext.h"
 
 #pragma region Initialisation
 // Sets default values
@@ -69,15 +70,19 @@ void ABase_MyCharacter::BeginPlay()
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	controller->OnCharacterMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
-	controller->OnCharacterMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
-	controller->OnCharacterMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
 	
-	controller->OnCameraMovementInputStarted.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
-	controller->OnCameraMovementInputTriggered.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
-	controller->OnCameraMovementInputComplete.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
+	FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
+	cameraMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
+	cameraMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
+	cameraMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
 	
-	controller->OnGaitChangeInputStarted.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
+	controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
+
+	controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
 
 	RotateCamera();
 }
@@ -88,34 +93,45 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (controller)
 	{
-		controller->OnCharacterMovementInputStarted.RemoveAll(this);
-		controller->OnCharacterMovementInputTriggered.RemoveAll(this);
-		controller->OnCharacterMovementInputComplete.RemoveAll(this);
-		
-		controller->OnCameraMovementInputStarted.RemoveAll(this);
-		controller->OnCameraMovementInputTriggered.RemoveAll(this);
-		controller->OnCameraMovementInputComplete.RemoveAll(this);
-		
-		controller->OnGaitChangeInputStarted.RemoveAll(this);
+		FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+		locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
+		locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+		locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+
+		FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
+		cameraMovementWrapper.ActionStartedEvent.RemoveAll(this);
+		cameraMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+		cameraMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+
+		controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.RemoveAll(this);
+
+		controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
 	}
 }
 #pragma endregion
 
 #pragma region Movement
-void ABase_MyCharacter::OnCharacterMovementStarted()
+void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _)
 {
-	CurrCharacterMovementState = ECharacterMovementState::MOVING;
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
+		CurrCharacterMovementState = ECharacterMovementState::MOVING;
 	// reset gait to walk
 	CurrCharacterGait = ECharacterGait::WALK;
 	SetTargetCharacterMovementSpeed();
 	StopCurrentlyPlayingTurningMontage();
 }
 
-void ABase_MyCharacter::OnCharacterMovementTriggered(FVector2D movementVector)
+void ABase_MyCharacter::OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
-	MovementInput = movementVector;
+	MovementInput = inputActionInstance.GetValue().Get<FVector2D>();
+	MovementInput.Normalize();
 	SetTargetCharacterRotation();
 	RotationCountdownTimer = 0;
+
+	if (NextTargetCharacterHorizontalAngle != CurrTargetCharacterHorizontalAngle)
+	{
+		StopCurrentlyPlayingTurningMontage();
+	}
 }
 
 void ABase_MyCharacter::Move(float deltaTime)
@@ -131,12 +147,14 @@ void ABase_MyCharacter::Move(float deltaTime)
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
 
-void ABase_MyCharacter::OnCharacterMovementComplete()
+void ABase_MyCharacter::OnCharacterMovementComplete(const FInputActionInstance& _)
 {
-	CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
+		CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	MovementInput = FVector2D::Zero();
 	SetTargetCharacterMovementSpeed();
 	SetTargetCharacterRotation();
-	StopCurrentlyPlayingTurningMontage();
+	StopCurrentlyPlayingTurningMontage();	
 }
 
 void ABase_MyCharacter::SetCharacterMovementSpeed(float deltaTime)
@@ -169,11 +187,36 @@ float ABase_MyCharacter::GetMovementRotation() const
 		movementRotation = -movementRotation;
 	return movementRotation;
 }
+
+void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, uint8 previousCustomMode)
+{
+	Super::OnMovementModeChanged(prevMovementMode, previousCustomMode);
+
+	if (prevMovementMode == EMovementMode::MOVE_Falling)
+	{
+		if (MovementInput != FVector2D::Zero())
+			CurrCharacterMovementState = ECharacterMovementState::MOVING;
+		else
+			CurrCharacterMovementState = ECharacterMovementState::IDLE;
+	}
+}
+
+void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
+{
+	// cannot jump while already jumping
+	if (CurrCharacterMovementState == ECharacterMovementState::JUMPING)
+		return;
+	StopCurrentlyPlayingTurningMontage();
+	Jump();
+	CurrCharacterMovementState = ECharacterMovementState::JUMPING;
+}
 #pragma endregion
 
 #pragma region Gait
-void ABase_MyCharacter::OnGaitChangeTriggered()
+void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 {
+	if (CurrCharacterMovementState != ECharacterMovementState::MOVING)
+		return;
 	CurrCharacterGait = CurrCharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
 	SetTargetCharacterMovementSpeed();
 }
@@ -344,17 +387,17 @@ bool ABase_MyCharacter::IsPlayingTurningMontage() const
 #pragma endregion
 
 #pragma region Camera
-void ABase_MyCharacter::OnCameraMovementStarted()
+void ABase_MyCharacter::OnCameraMovementStarted(const FInputActionInstance& _)
 {
 	HasCameraInput = true;
 }
 
-void ABase_MyCharacter::OnCameraMovementTriggered(FVector2D cameraVector)
+void ABase_MyCharacter::OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
-	CameraInput = cameraVector;
+	CameraInput = inputActionInstance.GetValue().Get<FVector2D>();
 }
 
-void ABase_MyCharacter::OnCameraMovementComplete()
+void ABase_MyCharacter::OnCameraMovementComplete(const FInputActionInstance& _)
 {
 	HasCameraInput = false;
 }
@@ -375,7 +418,7 @@ FCharacterMovementSettings ABase_MyCharacter::GetMovementSettings() const
 FCharacterState ABase_MyCharacter::GetCurrentState() const
 {
 	return FCharacterState{ CurrCharacterMovementState, CurrRotationDirection, CurrCharacterGait,
-		CurrTargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed };
+		CurrTargetCharacterHorizontalAngle, CurrCharacterHorizontalAngle, CurrViewVerticalAngle, CurrCharacterMovementSpeed, TargetCharacterMovementSpeed };
 }
 #pragma endregion
 
@@ -387,44 +430,55 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetTargetCharacterRotation();
 	}
 
-	if (IsPlayingTurningMontage())
+	if (CurrCharacterMovementState != ECharacterMovementState::JUMPING)
 	{
-		UpdateCharacterRotationThroughCurve();
-		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+		if (IsPlayingTurningMontage())
+		{
+			UpdateCharacterRotationThroughCurve();
+			SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+		}
+		else
+		{
+			CurrTargetCharacterHorizontalAngle = NextTargetCharacterHorizontalAngle;
+			CurrRotationDirection = NextRotationDirection;
+			if (ShouldDoMovingRotation())
+			{
+				if (ShouldDoMontageRotation())
+				{
+					PlayTurningMontage();
+				}
+				else
+				{
+					UpdateCharacterMovingRotation(deltaTime);
+					SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
+				}
+			}
+			else if (ShouldRotateInPlace())
+			{
+				// TODO: Clean this up
+				RotationCountdownTimer += deltaTime;
+				if (RotationCountdownTimer >= MovementSettings.RotationLookTimeThreshold)
+				{
+					RotationCountdownTimer = 0;
+					PlayTurningMontage();
+				}
+			}
+			else
+			{
+				RotationCountdownTimer = 0;
+			}
+		}
+
+		SetCharacterMovementSpeed(deltaTime);
 	}
 	else
 	{
 		CurrTargetCharacterHorizontalAngle = NextTargetCharacterHorizontalAngle;
 		CurrRotationDirection = NextRotationDirection;
-		if (ShouldDoMovingRotation())
-		{
-			if (ShouldDoMontageRotation())
-			{
-				PlayTurningMontage();
-			}
-			else
-			{
-				UpdateCharacterMovingRotation(deltaTime);
-				SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
-			}
-		}
-		else if (ShouldRotateInPlace())
-		{
-			// TODO: Clean this up
-			RotationCountdownTimer += deltaTime;
-			if (RotationCountdownTimer >= MovementSettings.RotationLookTimeThreshold)
-			{
-				RotationCountdownTimer = 0;
-				PlayTurningMontage();
-			}
-		}
-		else
-		{
-			RotationCountdownTimer = 0;
-		}
+		UpdateCharacterMovingRotation(deltaTime);
+		SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 	}
-	
-	SetCharacterMovementSpeed(deltaTime);
+
 	Move(deltaTime);
 
 	RotateCamera();
