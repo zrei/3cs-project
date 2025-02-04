@@ -131,9 +131,9 @@ private:
 		}
 	}
 
-	static float NinetyDegreeRotationCurveAmount;
+	const static float NinetyDegreeRotationCurveAmount;
 
-	static float OneHundredEightyDegreeRotationCurveAmount;
+	const static float OneHundredEightyDegreeRotationCurveAmount;
 
 	float RotationCountdownTimer;
 

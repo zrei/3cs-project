@@ -24,8 +24,8 @@ UENUM(BlueprintType)
 enum class ERotateDirection : uint8
 {
 	NONE UMETA(DisplayName = "None"),
-	LEFT UMETA(DisplayName = "Left"),
-	RIGHT UMETA(DisplayName = "Right")
+	RIGHT UMETA(DisplayName = "Right"),
+	LEFT UMETA(DisplayName = "Left")
 };
 
 USTRUCT(BlueprintType)
