@@ -203,4 +203,13 @@ protected:
 private:
 	TObjectPtr<UAnimInstance> MainAnimInstance;
 #pragma endregion
+
+#pragma region Rope swing
+public:
+	/// <summary>
+	/// Returns if the character can enter swing state
+	/// </summary>
+	/// <returns></returns>
+	bool EnterSwingState();
+#pragma endregion
 };

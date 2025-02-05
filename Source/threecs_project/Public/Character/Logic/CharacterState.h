@@ -10,7 +10,8 @@ enum class ECharacterMovementState : uint8
 {
 	IDLE UMETA(DisplayName = "Idle"),
 	MOVING UMETA(DisplayName = "Moving"),
-	JUMPING UMETA(DisplayName = "Jumping")
+	JUMPING UMETA(DisplayName = "Jumping"),
+	SWINGING UMETA(DisplayName = "Swinging")
 };
 
 UENUM(BlueprintType)

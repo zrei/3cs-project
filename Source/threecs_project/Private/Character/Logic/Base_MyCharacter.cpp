@@ -429,6 +429,17 @@ FCharacterState ABase_MyCharacter::GetCurrentState() const
 }
 #pragma endregion
 
+#pragma region Rope Swing
+bool ABase_MyCharacter::EnterSwingState()
+{
+	if (CurrCharacterMovementState == ECharacterMovementState::SWINGING)
+		return false;
+	
+	CurrCharacterMovementState = ECharacterMovementState::SWINGING;
+	return true;
+}
+#pragma endregion
+
 void ABase_MyCharacter::Tick(float deltaTime)
 {
 	if (HasCameraInput)
