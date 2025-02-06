@@ -223,9 +223,6 @@ void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 #pragma endregion
 
 #pragma region Rotation
-const float ABase_MyCharacter::NinetyDegreeRotationCurveAmount = 180;
-const float ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount = 360;
-
 void ABase_MyCharacter::SetTargetCharacterRotation()
 {
 	if (CurrCharacterMovementState == ECharacterMovementState::MOVING)
@@ -368,11 +365,12 @@ void ABase_MyCharacter::StopCurrentlyPlayingTurningMontage()
 	MainAnimInstance->StopSlotAnimation(0.25, LegsSlotName);
 }
 
-void ABase_MyCharacter::UpdateCharacterRotationThroughCurve()
+void ABase_MyCharacter::UpdateCharacterRotationThroughCurve(float deltaTime)
 {
 	if (MainAnimInstance)
 	{
-		float rotationCurveValue = FMath::Abs(MainAnimInstance->GetCurveValue(RotationCurveName) * RotationCurveScaleValue);		
+		float currFrameRate = 1 / deltaTime;
+		float rotationCurveValue = FMath::Abs(MainAnimInstance->GetCurveValue(RotationCurveName) * RotationCurveScaleValue * (TurnAnimationTargetFrameRate / currFrameRate));		
 				
 		if (CurrRotationDirection == ERotateDirection::RIGHT)
 		{
@@ -452,7 +450,7 @@ void ABase_MyCharacter::Tick(float deltaTime)
 	{
 		if (IsPlayingTurningMontage())
 		{
-			UpdateCharacterRotationThroughCurve();
+			UpdateCharacterRotationThroughCurve(deltaTime);
 			SetActorRotation({ 0, CurrCharacterHorizontalAngle, 0 });
 		}
 		else
@@ -500,5 +498,4 @@ void ABase_MyCharacter::Tick(float deltaTime)
 	Move(deltaTime);
 
 	RotateCamera();
-
 }

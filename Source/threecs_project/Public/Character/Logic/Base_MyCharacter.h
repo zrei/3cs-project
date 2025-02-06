@@ -107,7 +107,7 @@ private:
 	
 	void UpdateCharacterMovingRotation(float deltaTime);
 
-	void UpdateCharacterRotationThroughCurve();
+	void UpdateCharacterRotationThroughCurve(float deltaTime);
 
 	void SetTurnAnimationAsset();
 
@@ -131,9 +131,11 @@ private:
 		}
 	}
 
-	const static float NinetyDegreeRotationCurveAmount;
+	static constexpr float NinetyDegreeRotationCurveAmount = 90;
 
-	const static float OneHundredEightyDegreeRotationCurveAmount;
+	static constexpr float OneHundredEightyDegreeRotationCurveAmount = 180;
+
+	static constexpr float TurnAnimationTargetFrameRate = 30;
 
 	float RotationCountdownTimer;
 
