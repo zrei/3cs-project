@@ -34,6 +34,10 @@ private:
 
 	void UpdateStride();
 
+	void OnCharacterMovementStateChanged(ECharacterMovementState prevState, ECharacterMovementState currState);
+
+	void ResetJumpState();
+
 	TObjectPtr<ABase_MyCharacter> CharacterRef;
 
 	TObjectPtr<UCharacterMovementComponent> CharacterMovementRef;
@@ -43,6 +47,8 @@ private:
 	FCharacterState CurrCharacterState;
 
 	FVector VelocityVector;
+
+	FTimerHandle JumpTimerHandle;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
@@ -56,6 +62,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
 	float Stride;
+
+	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
+	bool IsJumping;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Locomotion")
+	float JumpTime;
 #pragma endregion
 
 #pragma region Turning
@@ -68,6 +80,24 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Turn Settings")
 	float CurrTurnBlendAlpha;
+#pragma endregion
+
+#pragma region Look
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Look")
+	float LookPitch;
+
+	UPROPERTY(BlueprintReadOnly, Category="Look")
+	float LookYaw;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
+	float LookPitchInterpolationSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
+	float LookYawInterpolationSpeed;
+
+private:
+	void UpdateLookState(float deltaTime);
 #pragma endregion
 
 #pragma region Feet IK Settings
@@ -147,11 +177,11 @@ protected:
 private:
 	void UpdateFootIK(float deltaTime);
 
-	void SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset);
+	void SetFootOffsets(float deltaTime, const FName& enableFootIKCurveName, const FName& iKFootBoneName, const FName& rootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset);
 
-	void SetPelvisIKOffset(float deltaTime, FVector footOffsetLTarget, FVector footOffsetRTarget);
+	void SetPelvisIKOffset(float deltaTime, const FVector& footOffsetLTarget, const FVector& footOffsetRTarget);
 
-	void SetFootLocking(float deltaTime, FName enableFootIKCurveName, FName footLockCurveName, FName IKFootBoneName, float& currentFootLockAlpha, FVector& currentFootLockLocation, FRotator& currentFootLockRotation);
+	void SetFootLocking(float deltaTime, const FName& enableFootIKCurveName, const FName& footLockCurveName, const FName& iKFootBoneName, float& currentFootLockAlpha, FVector& currentFootLockLocation, FRotator& currentFootLockRotation);
 
 	void SetFootLockOffsets(float deltaTime, FVector& localLocation, FRotator& localRotation);
 

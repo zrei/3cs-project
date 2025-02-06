@@ -4,6 +4,7 @@
 
 class UCameraComponent;
 class USceneComponent;
+struct FInputActionInstance;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -51,12 +52,15 @@ private:
 #pragma endregion
 
 #pragma region Character Movement
+public:
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
+
 private:
-	void OnCharacterMovementTriggered(FVector2D movementVector);
+	void OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance);
 
-	void OnCharacterMovementStarted();
+	void OnCharacterMovementStarted(const FInputActionInstance& inputActionInstance);
 
-	void OnCharacterMovementComplete();
+	void OnCharacterMovementComplete(const FInputActionInstance& inputActionInstance);
 
 	void Move(float deltaTime);
 
@@ -65,6 +69,8 @@ private:
 	void SetTargetCharacterMovementSpeed();
 
 	float GetMovementRotation() const;
+
+	void OnCharacterJump(const FInputActionInstance& inputActionInstance);
 
 	float CurrCharacterMovementSpeed;
 
@@ -101,7 +107,7 @@ private:
 	
 	void UpdateCharacterMovingRotation(float deltaTime);
 
-	void UpdateCharacterRotationThroughCurve();
+	void UpdateCharacterRotationThroughCurve(float deltaTime);
 
 	void SetTurnAnimationAsset();
 
@@ -125,9 +131,11 @@ private:
 		}
 	}
 
-	static float NinetyDegreeRotationCurveAmount;
+	static constexpr float NinetyDegreeRotationCurveAmount = 90;
 
-	static float OneHundredEightyDegreeRotationCurveAmount;
+	static constexpr float OneHundredEightyDegreeRotationCurveAmount = 180;
+
+	static constexpr float TurnAnimationTargetFrameRate = 30;
 
 	float RotationCountdownTimer;
 
@@ -144,7 +152,7 @@ private:
 
 #pragma region Gait
 private:
-	void OnGaitChangeTriggered();
+	void OnGaitChangeTriggered(const FInputActionInstance& inputActionInstance);
 #pragma endregion
 
 #pragma region Camera
@@ -160,16 +168,16 @@ protected:
 
 	virtual void RotateCamera() PURE_VIRTUAL(ABase_MyCharacter::RotateCamera)
 
-	virtual void OnCameraMovementTriggered(FVector2D cameraVector);
+	virtual void OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance);
 
 	float CurrViewVerticalAngle;
 
 	float CurrViewHorizontalAngle;
 
 private:
-	void OnCameraMovementStarted();
+	void OnCameraMovementStarted(const FInputActionInstance& inputActionInstance);
 
-	void OnCameraMovementComplete();
+	void OnCameraMovementComplete(const FInputActionInstance& inputActionInstance);
 
 	void SetTargetCameraRotation(float deltaTime);
 

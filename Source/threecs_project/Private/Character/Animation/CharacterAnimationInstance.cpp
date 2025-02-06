@@ -13,6 +13,8 @@ void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 	UpdateCharacterState();
 	UpdateMovementState();
 	UpdateStride();
+	
+	UpdateLookState(deltaTime);
 
 	UpdateFootIK(deltaTime);
 }
@@ -47,8 +49,26 @@ void UCharacterAnimationInstance::UpdateMovementState()
 
 void UCharacterAnimationInstance::UpdateCharacterState()
 {
+	ECharacterMovementState prevMovementState = CurrCharacterState.CharacterMovementState;
 	if (CharacterRef)
 		CurrCharacterState = CharacterRef->GetCurrentState();
+	ECharacterMovementState currMovementState = CurrCharacterState.CharacterMovementState;
+	if (prevMovementState != currMovementState)
+		OnCharacterMovementStateChanged(prevMovementState, currMovementState);
+}
+
+void UCharacterAnimationInstance::OnCharacterMovementStateChanged(ECharacterMovementState prevState, ECharacterMovementState currState)
+{
+	if (currState == ECharacterMovementState::JUMPING)
+	{
+		IsJumping = true;
+		GetWorld()->GetTimerManager().SetTimer(JumpTimerHandle, this, &UCharacterAnimationInstance::ResetJumpState, JumpTime, false);
+	}
+	else if (prevState == ECharacterMovementState::JUMPING)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(JumpTimerHandle);
+		IsJumping = false;
+	}
 }
 
 void UCharacterAnimationInstance::UpdateStride()
@@ -58,6 +78,22 @@ void UCharacterAnimationInstance::UpdateStride()
 		Stride = CurrCharacterState.CurrCharacterSpeed / CharacterMovementSettings.CharacterRunMovementSpeed;
 		MovementSpeed = Stride;
 	}
+}
+
+void UCharacterAnimationInstance::ResetJumpState()
+{
+	IsJumping = false;
+}
+#pragma endregion
+
+#pragma region Look
+void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
+{
+	float diff = CurrCharacterState.TargetCharacterRotation - CurrCharacterState.CurrCharacterRotation;
+	float targetLookYaw = (FMath::Clamp(diff/90, -1, 1) + 1) / 2;
+	LookYaw = FMath::FInterpTo(LookYaw, targetLookYaw, deltaTime, LookYawInterpolationSpeed);
+	float targetLookPitch = FMath::Clamp(CurrCharacterState.CurrLookPitch, -90, 90);
+	LookPitch = FMath::FInterpTo(LookPitch, targetLookPitch, deltaTime, LookPitchInterpolationSpeed);
 }
 #pragma endregion
 
@@ -71,7 +107,7 @@ void UCharacterAnimationInstance::UpdateFootIK(float deltaTime)
 	SetPelvisIKOffset(deltaTime, FootOffsetLTarget, FootOffsetRTarget);
 }
 
-void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFootIKCurveName, FName IKFootBoneName, FName RootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset)
+void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, const FName& enableFootIKCurveName, const FName& iKFootBoneName, const FName& rootBoneName, FVector& currLocationTarget, FVector& currLocationOffset, FRotator& currRotationOffset)
 {
 	if (GetCurveValue(enableFootIKCurveName) <= 0)
 	{
@@ -80,27 +116,27 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 		return;
 	}
 	
-	FVector IKFootBoneLocation = SkeletalMesh->GetSocketLocation(IKFootBoneName);
-	FVector rootBoneLocation = SkeletalMesh->GetSocketLocation(RootBoneName);
-	FVector IKFootFloorLocation{IKFootBoneLocation.X, IKFootBoneLocation.Y, rootBoneLocation.Z};
+	FVector iKFootBoneLocation = SkeletalMesh->GetSocketLocation(iKFootBoneName);
+	FVector rootBoneLocation = SkeletalMesh->GetSocketLocation(rootBoneName);
+	FVector iKFootFloorLocation{iKFootBoneLocation.X, iKFootBoneLocation.Y, rootBoneLocation.Z};
 
-	FVector LineTraceStart{ IKFootFloorLocation.X, IKFootFloorLocation.Y, IKFootFloorLocation.Z + IKTraceDistanceAboveFoot };
-	FVector LineTraceEnd{ IKFootFloorLocation.X, IKFootFloorLocation.Y, IKFootFloorLocation.Z - IKTraceDistanceBelowFoot };
+	FVector lineTraceStart{ iKFootFloorLocation.X, iKFootFloorLocation.Y, iKFootFloorLocation.Z + IKTraceDistanceAboveFoot };
+	FVector lineTraceEnd{ iKFootFloorLocation.X, iKFootFloorLocation.Y, iKFootFloorLocation.Z - IKTraceDistanceBelowFoot };
 	
 	//initialize hit info
-	FHitResult RV_Hit(ForceInit);
+	FHitResult hitResult(ForceInit);
 
-	FRotator TargetRotationOffset;
+	FRotator targetRotationOffset;
 
-	ETraceTypeQuery TraceChannel = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
-	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), LineTraceStart, LineTraceEnd, TraceChannel, false, {}, EDrawDebugTrace::ForOneFrame, RV_Hit, true, FColor::Red, FColor::Green, 5))
+	ETraceTypeQuery traceChannel = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
+	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), lineTraceStart, lineTraceEnd, traceChannel, false, {}, EDrawDebugTrace::ForOneFrame, hitResult, true, FColor::Red, FColor::Green, 5))
 	{
-		if (CharacterMovementRef->IsWalkable(RV_Hit))
+		if (CharacterMovementRef->IsWalkable(hitResult))
 		{
-			currLocationTarget = RV_Hit.ImpactNormal * FootHeight + RV_Hit.ImpactPoint - (IKFootFloorLocation + FVector::UpVector * FootHeight);
-			double rotatorX = FMath::Atan2(RV_Hit.ImpactNormal.Y, RV_Hit.ImpactNormal.Z);
-			double rotatorY = FMath::Atan2(RV_Hit.ImpactNormal.X, RV_Hit.ImpactNormal.Z) * -1;
-			TargetRotationOffset = {rotatorX, rotatorY, 0};
+			currLocationTarget = hitResult.ImpactNormal * FootHeight + hitResult.ImpactPoint - (iKFootFloorLocation + FVector::UpVector * FootHeight);
+			double rotatorX = FMath::Atan2(hitResult.ImpactNormal.Y, hitResult.ImpactNormal.Z);
+			double rotatorY = FMath::Atan2(hitResult.ImpactNormal.X, hitResult.ImpactNormal.Z) * -1;
+			targetRotationOffset = {rotatorX, rotatorY, 0};
 		}
 	}
 
@@ -113,10 +149,10 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, FName enableFo
 		currLocationOffset = UKismetMathLibrary::VInterpTo(currLocationOffset, currLocationTarget, deltaTime, 15);
 	}
 
-	currRotationOffset = UKismetMathLibrary::RInterpTo(currRotationOffset, TargetRotationOffset, deltaTime, 30);
+	currRotationOffset = UKismetMathLibrary::RInterpTo(currRotationOffset, targetRotationOffset, deltaTime, 30);
 }
 
-void UCharacterAnimationInstance::SetPelvisIKOffset(float deltaTime, FVector footOffsetLTarget, FVector footOffsetRTarget)
+void UCharacterAnimationInstance::SetPelvisIKOffset(float deltaTime, const FVector& footOffsetLTarget, const FVector& footOffsetRTarget)
 {
 	PelvisAlpha = (GetCurveValue(LeftFootIKCurveName) + GetCurveValue(RightFootIKCurveName)) / 2;
 
@@ -147,7 +183,7 @@ void UCharacterAnimationInstance::SetPelvisIKOffset(float deltaTime, FVector foo
 	}
 }
 
-void UCharacterAnimationInstance::SetFootLocking(float deltaTime, FName enableFootIKCurveName, FName footLockCurveName, FName IKFootBoneName, float& currentFootLockAlpha, FVector& currentFootLockLocation, FRotator& currentFootLockRotation)
+void UCharacterAnimationInstance::SetFootLocking(float deltaTime, const FName& enableFootIKCurveName, const FName& footLockCurveName, const FName& iKFootBoneName, float& currentFootLockAlpha, FVector& currentFootLockLocation, FRotator& currentFootLockRotation)
 {
 	if (GetCurveValue(enableFootIKCurveName) <= 0)
 	{
@@ -170,7 +206,7 @@ void UCharacterAnimationInstance::SetFootLocking(float deltaTime, FName enableFo
 
 	if (currentFootLockAlpha >= 0.99)
 	{
-		FTransform socketTransform = SkeletalMesh->GetSocketTransform(IKFootBoneName, RTS_Component);
+		FTransform socketTransform = SkeletalMesh->GetSocketTransform(iKFootBoneName, RTS_Component);
 		currentFootLockLocation = socketTransform.GetLocation();
 		currentFootLockRotation = socketTransform.Rotator();
 	}
