@@ -5,6 +5,9 @@
 class UCameraComponent;
 class USceneComponent;
 struct FInputActionInstance;
+class UCharacterTurnAnimationSettings;
+class UCharacterLocomotionSettings;
+class UCharacterCameraSettings;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -40,17 +43,6 @@ protected:
 
 	virtual void Tick(float deltaTime) override;
 
-#pragma region State
-private:
-	ECharacterGait CurrCharacterGait;
-
-	ECharacterMovementState CurrCharacterMovementState;
-
-	ERotateDirection CurrRotationDirection;
-
-	ERotateDirection NextRotationDirection;
-#pragma endregion
-
 #pragma region Character Movement
 public:
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
@@ -72,29 +64,13 @@ private:
 
 	void OnCharacterJump(const FInputActionInstance& inputActionInstance);
 
-	float CurrCharacterMovementSpeed;
-
-	float TargetCharacterMovementSpeed;
-
 	FVector2D MovementInput;
 #pragma endregion
 
 #pragma region Rotation
 protected:
 	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnLeftLessThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnRightLessThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnLeftMoreThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnRightMoreThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	FName LegsSlotName;
+	TObjectPtr<UCharacterTurnAnimationSettings> NormalTurnAnimationSettings;
 
 private:
 	bool ShouldRotateInPlace() const;
@@ -139,12 +115,6 @@ private:
 
 	float RotationCountdownTimer;
 
-	float CurrCharacterHorizontalAngle;
-
-	float CurrTargetCharacterHorizontalAngle;
-
-	float NextTargetCharacterHorizontalAngle;
-
 	float RotationCurveScaleValue;
 
 	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
@@ -158,7 +128,7 @@ private:
 #pragma region Camera
 protected:
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	FCameraSettings CameraSettings;
+	TObjectPtr<UCharacterCameraSettings> CharacterCameraSettings;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
@@ -170,9 +140,8 @@ protected:
 
 	virtual void OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance);
 
-	float CurrViewVerticalAngle;
-
-	float CurrViewHorizontalAngle;
+public:
+	const FCameraSettings& GetCameraSettings() const;
 
 private:
 	void OnCameraMovementStarted(const FInputActionInstance& inputActionInstance);
@@ -189,19 +158,18 @@ private:
 #pragma region Movement and Rotation Info
 protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	FCharacterMovementSettings MovementSettings;
+	TObjectPtr<UCharacterLocomotionSettings> CharacterLocomotionSettings;
 
 public:
-	FCharacterMovementSettings GetMovementSettings() const;
+	const FCharacterMovementSettings& GetMovementSettings() const;
 
-	FCharacterState GetCurrentState() const;
+	const FCharacterState& GetCurrentState() const;
+
+protected:
+	FCharacterState CurrCharacterState;
 #pragma endregion
 
 #pragma region Skeleton and Animation
-protected:
-	UPROPERTY(EditAnywhere, Category = "Animation")
-	FName RotationCurveName;
-
 private:
 	TObjectPtr<UAnimInstance> MainAnimInstance;
 #pragma endregion

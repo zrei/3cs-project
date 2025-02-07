@@ -2,6 +2,10 @@
 
 #pragma once
 
+class UCharacterAnimationLocomotionSettings;
+class UCharacterAnimationFeetIKSettings;
+class UCharacterAnimationLookSettings;
+
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Character/Logic/Base_MyCharacter.h"
@@ -26,6 +30,15 @@ protected:
 private:
 	TObjectPtr<USkeletalMeshComponent> SkeletalMesh;
 
+	bool IsRunningInGame = false;
+
+	
+#pragma region Locomotion Settings
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Locomotion Settings")
+	TObjectPtr<UCharacterAnimationLocomotionSettings> LocomotionSettings;
+#pragma endregion
+
 #pragma region Locomotion
 private:
 	void UpdateMovementState();
@@ -42,59 +55,48 @@ private:
 
 	TObjectPtr<UCharacterMovementComponent> CharacterMovementRef;
 
-	FCharacterMovementSettings CharacterMovementSettings;
-
-	FCharacterState CurrCharacterState;
-
 	FVector VelocityVector;
 
 	FTimerHandle JumpTimerHandle;
 
+	ECharacterMovementState CurrMovementState = ECharacterMovementState::IDLE;
+
 protected:
-	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
-	bool IsMoving;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	bool IsMoving = false;
 
-	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
-	bool IsFalling;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	bool IsFalling = false;
 
-	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
-	float MovementSpeed;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	float MovementSpeed = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
-	float Stride;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	float Stride = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category="Locomotion")
-	bool IsJumping;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Locomotion")
-	float JumpTime;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	bool IsJumping = false;
 #pragma endregion
 
 #pragma region Turning
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn Settings")
-	float MovingTurnBlendAlpha = 0.5;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Turn Settings")
-	float StationaryTurnBlendAlpha = 1;
-
-	UPROPERTY(BlueprintReadOnly, Category="Turn Settings")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Turn")
 	float CurrTurnBlendAlpha;
+#pragma endregion
+
+#pragma region Look Settings
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Look Settings")
+	TObjectPtr<UCharacterAnimationLookSettings> LookSettings;
 #pragma endregion
 
 #pragma region Look
 protected:
-	UPROPERTY(BlueprintReadOnly, Category="Look")
-	float LookPitch;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Look")
+	float LookPitch = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category="Look")
-	float LookYaw;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
-	float LookPitchInterpolationSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Look")
-	float LookYawInterpolationSpeed;
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Look")
+	float LookYaw = 0.5;
 
 private:
 	void UpdateLookState(float deltaTime);
@@ -102,76 +104,46 @@ private:
 
 #pragma region Feet IK Settings
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName LeftFootRootBoneName = FName{"root"};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName RightFootRootBoneName = FName{"root"};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName LeftIKFootBoneName = FName{ "ik_foot_l" };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName RightIKFootBoneName = FName{ "ik_foot_r" };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName LeftFootIKCurveName = FName{ "Enable_FootIK_L" };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName RightFootIKCurveName = FName{ "Enable_FootIK_R" };
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName LeftFootLockCurve = FName{"FootLock_L"};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	FName RightFootLockCurve = FName{"FootLock_R"};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	float IKTraceDistanceAboveFoot = 50;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	float IKTraceDistanceBelowFoot = 45;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Feet IK Settings")
-	float FootHeight = 13.5;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Feet IK Settings")
+	TObjectPtr<UCharacterAnimationFeetIKSettings> FeetIKSettings;
 #pragma endregion
 
 #pragma region Feet IK
 protected:
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FVector FootLockLLocation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FRotator FootLockLRotation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	float FootLockLAlpha;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FVector FootLockRLocation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FRotator FootLockRRotation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	float FootLockRAlpha;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FVector FootOffsetLLocation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FRotator FootOffsetLRotation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FVector FootOffsetRLocation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FRotator FootOffsetRRotation;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	FVector PelvisOffset;
 
-	UPROPERTY(BlueprintReadOnly, Category="Feet IK")
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Feet IK")
 	float PelvisAlpha;
 
 private:
