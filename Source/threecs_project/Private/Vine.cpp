@@ -5,6 +5,8 @@
 #include "CableComponent.h"
 #include "Components/SphereComponent.h"
 #include "Character/Logic/Base_MyCharacter.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 // Sets default values
@@ -12,6 +14,9 @@ AVine::AVine()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	VineTop = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Vine top"));
+	RootComponent = VineTop;
 
 	Cable = CreateDefaultSubobject<UCableComponent>(TEXT("Cable"));
 	Cable->SetupAttachment(RootComponent);
@@ -21,12 +26,8 @@ AVine::AVine()
 
 	PhysicsConstraint = CreateDefaultSubobject<UPhysicsConstraintComponent>(TEXT("Physics Constraint"));
 	PhysicsConstraint->SetupAttachment(RootComponent);
-
-	VineTop = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Vine top"));
-	VineTop->SetupAttachment(RootComponent);
-
-	PhysicsConstraint->SetConstrainedComponents(VineTop, {}, nullptr, {});
-
+	PhysicsConstraint->ConstraintActor1 = this;
+	
 	// parent the sphere to the cable and attach it to the cable, specifically to cable end
 	// on attach we need to set constraint components 2 to be the character (mesh?) and hand_r
 	// the cable needs to set attach end to true and attach end to the hand_rSocket on the character mesh
@@ -35,7 +36,7 @@ AVine::AVine()
 	SphereCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Collider"));
 	SphereCollision->InitSphereRadius(20);
 	SphereCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-	SphereCollision->SetupAttachment(RootComponent);
+	SphereCollision->SetupAttachment(Cable, FName{"CableEnd"});
 	SphereCollision->bHiddenInGame = false;
 }
 
@@ -74,8 +75,13 @@ void AVine::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	if (!character->EnterSwingState())
 		return;
 	Cable->bAttachEnd = true;
-	Cable->SetAttachEndTo(OtherActor, FName{ "Skeleton" }, FName{ "hand_rSocket" });
-	PhysicsConstraint->SetConstrainedComponents(VineTop, {}, OtherActor->GetComponentByClass<USkeletalMeshComponent>(), FName{ "hand_r" });
+	Cable->SetAttachEndTo(OtherActor, FName{ "Mesh" }, FName{ "hand_rSocket" });
+	PhysicsConstraint->ConstraintActor2 = OtherActor;
 	IsOccupied = true;
+	character->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
+	character->GetCharacterMovement()->StopMovementImmediately();
+	//PhysicsConstraint->SetConstraintReferencePosition()
+	character->GetCapsuleComponent()->SetSimulatePhysics(true);
+	//character->GetCapsuleComponent()->AddForce({ 12000000.0 , 0, 0 });
 }
 

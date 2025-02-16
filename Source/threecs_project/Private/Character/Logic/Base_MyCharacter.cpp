@@ -423,6 +423,15 @@ bool ABase_MyCharacter::EnterSwingState()
 		return false;
 	
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::SWINGING;
+
+	FInputActionWrapper& locomotionMovementWrapper = Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
+	locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+	locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+
+	StopCurrentlyPlayingTurningMontage();
+	MovementInput = FVector2D::Zero();
+
 	return true;
 }
 #pragma endregion
@@ -484,7 +493,8 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		SetActorRotation({ 0, CurrCharacterState.CurrCharacterRotation, 0 });
 	}
 
-	Move(deltaTime);
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
+		Move(deltaTime);
 
 	RotateCamera();
 }

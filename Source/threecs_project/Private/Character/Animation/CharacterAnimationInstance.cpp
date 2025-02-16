@@ -125,7 +125,7 @@ void UCharacterAnimationInstance::SetFootOffsets(float deltaTime, const FName& e
 	FRotator targetRotationOffset;
 
 	ETraceTypeQuery traceChannel = UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility);
-	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), lineTraceStart, lineTraceEnd, traceChannel, false, {}, EDrawDebugTrace::ForOneFrame, hitResult, true, FColor::Red, FColor::Green, 5))
+	if (UKismetSystemLibrary::LineTraceSingle(GetWorld(), lineTraceStart, lineTraceEnd, traceChannel, false, {}, EDrawDebugTrace::None, hitResult, true))
 	{
 		if (CharacterMovementRef->IsWalkable(hitResult))
 		{

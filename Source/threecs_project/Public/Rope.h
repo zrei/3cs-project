@@ -2,42 +2,47 @@
 
 #pragma once
 
-class UCableComponent;
-class UPhysicsConstraintComponent;
-class UPlaneComponent;
-class UStaticMeshComponent;
 class USphereComponent;
+struct FInputActionInstance;
+class UCameraComponent;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Vine.generated.h"
+#include "Rope.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FRopeAttachDelegate, ARope* const);
 
 UCLASS()
-class THREECS_PROJECT_API AVine : public AActor
+class THREECS_PROJECT_API ARope : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AVine();
+	ARope();
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UCableComponent> Cable;
+	TObjectPtr<USkeletalMeshComponent> Rope;
 
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UStaticMeshComponent> VineTop;
-
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UPhysicsConstraintComponent> PhysicsConstraint;
+	TObjectPtr<UStaticMeshComponent> RopeTop;
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<USphereComponent> SphereCollision;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCameraComponent> RopeCamera;
+
+	static FRopeAttachDelegate RopeAttachEvent;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UPROPERTY(EditAnywhere)
+	float CameraOffset;
 
 public:	
 	// Called every frame
@@ -48,4 +53,12 @@ private:
 	void OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	bool IsOccupied;
+
+	void OnMovementTriggered(const FInputActionInstance& input);
+
+	void SubscribeToMovement();
+
+	float CharacterHorizontalAngle;
+
+	float DefaultLookPitch;
 };
