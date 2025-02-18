@@ -38,12 +38,16 @@ ARope::ARope()
 	RopeCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	RopeCamera->SetupAttachment(RootComponent);
 	RopeCamera->bAutoActivate = false;
+
+	SwingCooldown = 10;
 }
 
 // Called when the game starts or when spawned
 void ARope::BeginPlay()
 {
 	Super::BeginPlay();
+
+	CanSwing = true;
 
 	this->Rope->SetAllBodiesBelowSimulatePhysics(FName{ "Bone_100" }, true);
 	SphereCollision->OnComponentBeginOverlap.AddDynamic(this, &ARope::OnCharacterOverlap);
@@ -80,6 +84,8 @@ void ARope::Tick(float DeltaTime)
 
 void ARope::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!CanSwing)
+		return;
 	UE_LOG(LogTemp, Warning, TEXT("OVERLAP!!!"));
 	if (IsOccupied)
 		return;
@@ -99,13 +105,24 @@ void ARope::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	RopeAttachEvent.Broadcast(this);
 
 	CharacterHorizontalAngle = character->GetCurrentState().CurrCharacterRotation;
+
+	SphereCollision->OnComponentBeginOverlap.RemoveAll(this);
+
+	AttachedCharacter = character;
 }
 
 void ARope::SubscribeToMovement()
 {
 	TObjectPtr<AMyPlayerController> myPlayerController = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	FInputActionWrapper& locomotionMovementWrapper = myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
-	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ARope::OnMovementTriggered);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT).ActionTriggeredEvent.AddUObject(this, &ARope::OnMovementTriggered);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ARope::ReleaseRope);
+}
+
+void ARope::UnsubcribeToMovement()
+{
+	TObjectPtr<AMyPlayerController> myPlayerController = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT).ActionTriggeredEvent.RemoveAll(this);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
 }
 
 void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance)
@@ -116,4 +133,30 @@ void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance)
 	Rope->AddForce({ movementInput.X * 30000, movementInput.Y * 30000, 0 }, FName{ "Bone_050" });
 }
 
+void ARope::ReleaseRope(const FInputActionInstance& inputActionInstance)
+{
+	if (!IsOccupied)
+		return;
+	if (!AttachedCharacter)
+		return;
+	IsOccupied = false;
+	CanSwing = false;
+	FTimerHandle throwaway;
+	GetWorld()->GetTimerManager().SetTimer(throwaway, this, &ARope::ResetSwingableState, SwingCooldown, false);
+	AttachedCharacter->ExitSwingState();
+	AttachedCharacter->DetachFromActor({EDetachmentRule::KeepWorld, EDetachmentRule::KeepRelative, EDetachmentRule::KeepWorld, false});
+	AttachedCharacter->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	AttachedCharacter->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Falling;
+	RopeDetachEvent.Broadcast();
+
+	AttachedCharacter = nullptr;
+}
+
+void ARope::ResetSwingableState()
+{
+	CanSwing = true;
+	SphereCollision->OnComponentBeginOverlap.AddDynamic(this, &ARope::OnCharacterOverlap);
+}
+
 FRopeAttachDelegate ARope::RopeAttachEvent;
+FRopeDetachDelegate ARope::RopeDetachEvent;

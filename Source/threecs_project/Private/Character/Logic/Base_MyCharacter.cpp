@@ -428,9 +428,26 @@ bool ABase_MyCharacter::EnterSwingState()
 	locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
 	locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
 	locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+	Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
 
 	StopCurrentlyPlayingTurningMontage();
 	MovementInput = FVector2D::Zero();
+
+	return true;
+}
+
+bool ABase_MyCharacter::ExitSwingState()
+{
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
+		return false;
+
+	CurrCharacterState.CharacterMovementState = ECharacterMovementState::JUMPING;
+
+	FInputActionWrapper& locomotionMovementWrapper = Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
 
 	return true;
 }

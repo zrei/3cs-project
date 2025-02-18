@@ -5,12 +5,14 @@
 class USphereComponent;
 struct FInputActionInstance;
 class UCameraComponent;
+class ABase_MyCharacter;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Rope.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FRopeAttachDelegate, ARope* const);
+DECLARE_MULTICAST_DELEGATE(FRopeDetachDelegate);
 
 UCLASS()
 class THREECS_PROJECT_API ARope : public AActor
@@ -35,6 +37,8 @@ public:
 
 	static FRopeAttachDelegate RopeAttachEvent;
 
+	static FRopeDetachDelegate RopeDetachEvent;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -43,6 +47,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float CameraOffset;
+
+	UPROPERTY(EditAnywhere)
+	float SwingCooldown;
 
 public:	
 	// Called every frame
@@ -58,7 +65,17 @@ private:
 
 	void SubscribeToMovement();
 
+	void UnsubcribeToMovement();
+
+	void ResetSwingableState();
+
 	float CharacterHorizontalAngle;
 
 	float DefaultLookPitch;
+
+	void ReleaseRope(const FInputActionInstance& input);
+
+	TObjectPtr<ABase_MyCharacter> AttachedCharacter;
+
+	bool CanSwing;
 };

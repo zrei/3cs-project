@@ -24,4 +24,6 @@ protected:
 
 private:
 	void RopeAttach(ARope* const);
+
+	void RopeDetach();
 };

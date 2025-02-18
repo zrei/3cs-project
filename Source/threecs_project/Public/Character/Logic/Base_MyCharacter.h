@@ -181,5 +181,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	bool EnterSwingState();
+
+	bool ExitSwingState();
 #pragma endregion
 };
