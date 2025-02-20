@@ -9,6 +9,8 @@
 #include "Data/Character/CharacterLocomotionSettings.h"
 #include "Data/Character/CharacterCameraSettings.h"
 #include "InputMappingContext.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 #pragma region Initialisation
 // Sets default values
@@ -56,20 +58,13 @@ void ABase_MyCharacter::BeginPlay()
 
 	AMyPlayerController* controller = Cast<AMyPlayerController>(GetController());
 
-	FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
-	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
-	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
-	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	SubscribeToLocomotionInputs(controller);
 	
 	FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
 	cameraMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementStarted);
 	cameraMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementTriggered);
 	cameraMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCameraMovementComplete);
 	
-	controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
-
-	controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
-
 	RotateCamera();
 }
 
@@ -79,20 +74,35 @@ void ABase_MyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	if (controller)
 	{
-		FInputActionWrapper& locomotionMovementWrapper = controller->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
-		locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
-		locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
-		locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+		UnsubscribeToLocomotionInputs(controller);
 
 		FInputActionWrapper& cameraMovementWrapper = controller->GetActionInputWrapper(FInputType::CAMERA_MOVEMENT);
 		cameraMovementWrapper.ActionStartedEvent.RemoveAll(this);
 		cameraMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
 		cameraMovementWrapper.ActionCompletedEvent.RemoveAll(this);
-
-		controller->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.RemoveAll(this);
-
-		controller->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
 	}
+}
+#pragma endregion
+
+#pragma region Locomotion
+void ABase_MyCharacter::SubscribeToLocomotionInputs(AMyPlayerController* const playerController)
+{
+	FInputActionWrapper& locomotionMovementWrapper = playerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
+	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
+	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
+	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
+	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
+}
+
+void ABase_MyCharacter::UnsubscribeToLocomotionInputs(AMyPlayerController* const playerController)
+{
+	FInputActionWrapper& locomotionMovementWrapper = playerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
+	locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
+	locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
+	locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
+	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
+	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.RemoveAll(this);
 }
 #pragma endregion
 
@@ -424,11 +434,12 @@ bool ABase_MyCharacter::EnterSwingState()
 	
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::SWINGING;
 
-	FInputActionWrapper& locomotionMovementWrapper = Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
-	locomotionMovementWrapper.ActionStartedEvent.RemoveAll(this);
-	locomotionMovementWrapper.ActionTriggeredEvent.RemoveAll(this);
-	locomotionMovementWrapper.ActionCompletedEvent.RemoveAll(this);
-	Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
+	GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	AMyPlayerController* playerController = Cast<AMyPlayerController>(GetController());
+	UnsubscribeToLocomotionInputs(playerController);
 
 	StopCurrentlyPlayingTurningMontage();
 	MovementInput = FVector2D::Zero();
@@ -443,11 +454,11 @@ bool ABase_MyCharacter::ExitSwingState()
 
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::JUMPING;
 
-	FInputActionWrapper& locomotionMovementWrapper = Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT);
-	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
-	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
-	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
-	Cast<AMyPlayerController>(GetController())->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Falling;
+
+	AMyPlayerController* playerController = Cast<AMyPlayerController>(GetController());
+	SubscribeToLocomotionInputs(playerController);
 
 	return true;
 }

@@ -8,6 +8,7 @@ struct FInputActionInstance;
 class UCharacterTurnAnimationSettings;
 class UCharacterLocomotionSettings;
 class UCharacterCameraSettings;
+class AMyPlayerController;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -42,6 +43,12 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void Tick(float deltaTime) override;
+
+#pragma region Locomotion
+	void SubscribeToLocomotionInputs(AMyPlayerController* const playerController);
+
+	void UnsubscribeToLocomotionInputs(AMyPlayerController* const playerController);
+#pragma endregion
 
 #pragma region Character Movement
 public:

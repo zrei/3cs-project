@@ -1,17 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Rope.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Character/Logic/Base_MyCharacter.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Controller/MyPlayerController.h"
 #include "InputMappingContext.h"
 #include "EnhancedInputComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
+#pragma region Initialisation
 // Sets default values
 ARope::ARope()
 {
@@ -24,22 +24,26 @@ ARope::ARope()
 	Rope = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Rope"));
 	Rope->SetupAttachment(RootComponent);
 
-	// parent the sphere to the cable and attach it to the cable, specifically to cable end
-	// on attach we need to set constraint components 2 to be the character (mesh?) and hand_r
-	// the cable needs to set attach end to true and attach end to the hand_rSocket on the character mesh
-	// drop out when jumping, should NOT reattach until you re-enter
-	// will have to see how it plays with the MOVE input...
+	// TODO: Spawn more spheres along the length to represent each bone
+	// TODO: Scale the length of the rope (maybe through hiding bones or through a spline mesh)
 	SphereCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Collider"));
-	SphereCollision->InitSphereRadius(20);
+	SphereCollision->InitSphereRadius(SphereCollisionRadius);
 	SphereCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	SphereCollision->SetupAttachment(Rope, FName{"Bone_001"});
 	SphereCollision->bHiddenInGame = false;
 
+	// camera for better viewing of the character
+	// TODO: Adjust positioning based on character position
 	RopeCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	RopeCamera->SetupAttachment(RootComponent);
 	RopeCamera->bAutoActivate = false;
 
 	SwingCooldown = 10;
+	RopeForce = 30000;
+	CameraOffset = 300;
+	AttachBone = FName{ "Bone_022" };
+	SimulatePhysicsBone = FName{ "Bone_100" };
+	BoneToApplyForce = FName{ "Bone_050" };
 }
 
 // Called when the game starts or when spawned
@@ -48,23 +52,23 @@ void ARope::BeginPlay()
 	Super::BeginPlay();
 
 	HasJumpInputStarted = false;
-
 	CanSwing = true;
-
-	this->Rope->SetAllBodiesBelowSimulatePhysics(FName{ "Bone_100" }, true);
-	SphereCollision->OnComponentBeginOverlap.AddDynamic(this, &ARope::OnCharacterOverlap);
 	IsOccupied = false;
-
 	DefaultLookPitch = RopeCamera->GetComponentRotation().Pitch;
-	RopeCamera->SetWorldLocation(RootComponent->GetComponentLocation() - FVector::ForwardVector * CameraOffset);
-	RopeCamera->SetWorldRotation(FQuat::MakeFromRotator(FRotator{ DefaultLookPitch, CharacterHorizontalAngle, 0 }));
+	CharacterAttachHorizontalAngle = 0;
+
+	UpdateCameraPositionAndRotation();
+
+	this->Rope->SetAllBodiesBelowSimulatePhysics(SimulatePhysicsBone, true);
+	
+	ActivateCollision();
 }
 
 void ARope::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	SphereCollision->OnComponentBeginOverlap.RemoveDynamic(this, &ARope::OnCharacterOverlap);
+	DeactivateCollision();
 }
 
 // Called every frame
@@ -72,58 +76,109 @@ void ARope::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	DrawDebugString(GetWorld(), Rope->GetSocketLocation(FName{ "Bone_100" }), FString{ "Bone_100" });
+	DrawDebugString(GetWorld(), Rope->GetSocketLocation(SimulatePhysicsBone), SimulatePhysicsBone.ToString());
 
 	if (IsOccupied)
 	{
-		FVector cameraWorldLocation = RootComponent->GetComponentLocation() + (-FVector::ForwardVector * CameraOffset).RotateAngleAxis(CharacterHorizontalAngle, FVector::UpVector);
-		RopeCamera->SetWorldLocation(cameraWorldLocation);
-
-		FQuat cameraWorldRotation = FQuat::MakeFromRotator(FRotator{ DefaultLookPitch, CharacterHorizontalAngle, 0 });
-		RopeCamera->SetWorldRotation(cameraWorldRotation);
+		UpdateCameraPositionAndRotation();
 	}
 }
+#pragma endregion
 
+#pragma region Camera
+void ARope::UpdateCameraPositionAndRotation()
+{
+	FVector cameraWorldLocation = RootComponent->GetComponentLocation() + (-FVector::ForwardVector * CameraOffset).RotateAngleAxis(CharacterAttachHorizontalAngle, FVector::UpVector);
+	RopeCamera->SetWorldLocation(cameraWorldLocation);
+
+	FQuat cameraWorldRotation = FQuat::MakeFromRotator(FRotator{ DefaultLookPitch, CharacterAttachHorizontalAngle, 0 });
+	RopeCamera->SetWorldRotation(cameraWorldRotation);
+}
+#pragma endregion
+
+#pragma region Collision
 void ARope::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!CanSwing)
-		return;
-	UE_LOG(LogTemp, Warning, TEXT("OVERLAP!!!"));
-	if (IsOccupied)
-		return;
 	ABase_MyCharacter* character = Cast<ABase_MyCharacter>(OtherActor);
 	if (!character)
 		return;
-	if (!character->EnterSwingState())
-		return;
-	IsOccupied = true;
-	character->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
-	character->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	character->GetCharacterMovement()->StopMovementImmediately();
+	
+	TryAttachCharacter(character);
+}
+#pragma endregion
 
-	character->AttachToComponent(this->Rope, {EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true}, FName{"Bone_022"});
-	SubscribeToMovement();
+#pragma region Attach
+FRopeAttachDelegate ARope::RopeAttachEvent;
+
+bool ARope::TryAttachCharacter(ABase_MyCharacter* character)
+{
+	if (!CanSwing)
+		return false;
+	if (IsOccupied)
+		return false;
+
+	FVector currCharacterVelocity = character->GetMovementComponent()->Velocity;
+	currCharacterVelocity.Z = 0;
+
+	if (!character->EnterSwingState())
+		return false;
+
+	IsOccupied = true;
+	HasJumpInputStarted = false;
+
+	AttachedCharacter = character;
+	AttachedCharacter->AttachToComponent(this->Rope, { EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true }, AttachBone);
+	CharacterAttachHorizontalAngle = AttachedCharacter->GetCurrentState().CurrCharacterRotation;
+
 	RopeCamera->SetActive(true);
 	RopeAttachEvent.Broadcast(this);
 
-	CharacterHorizontalAngle = character->GetCurrentState().CurrCharacterRotation;
+	DeactivateCollision();
 
-	SphereCollision->OnComponentBeginOverlap.RemoveAll(this);
+	SubscribeToMovement();
 
-	AttachedCharacter = character;
+	Rope->SetPhysicsLinearVelocity(currCharacterVelocity, true, BoneToApplyForce);
+	return true;
 }
+#pragma endregion
 
+#pragma region Detach
+FRopeDetachDelegate ARope::RopeDetachEvent;
+
+bool ARope::TryDetachCharacter()
+{
+	if (!IsOccupied)
+		return false;
+	if (!AttachedCharacter)
+		return false;
+
+	IsOccupied = false;
+
+	CanSwing = false;
+	GetWorld()->GetTimerManager().SetTimer(ResetSwingStateTimer, this, &ARope::ResetSwingableState, SwingCooldown, false);
+	
+	AttachedCharacter->ExitSwingState();
+	AttachedCharacter->DetachFromActor({ EDetachmentRule::KeepWorld, EDetachmentRule::KeepRelative, EDetachmentRule::KeepWorld, false });
+	FVector currRopeVelocity = Rope->GetPhysicsLinearVelocity(BoneToApplyForce);
+	currRopeVelocity.Z = 0;
+	AttachedCharacter->LaunchCharacter(currRopeVelocity, true, true);
+	
+	RopeDetachEvent.Broadcast();
+
+	AttachedCharacter = nullptr;
+	HasJumpInputStarted = false;
+	
+	return true;
+}
+#pragma endregion
+
+#pragma region Input
 void ARope::SubscribeToMovement()
 {
 	TObjectPtr<AMyPlayerController> myPlayerController = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT).ActionTriggeredEvent.AddUObject(this, &ARope::OnMovementTriggered);
-	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ARope::ReleaseRope);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ARope::OnJumpTriggered);
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionStartedEvent.AddUObject(this, &ARope::StartJump);
-}
-
-void ARope::StartJump(const FInputActionInstance& input)
-{
-	HasJumpInputStarted = true;
 }
 
 void ARope::UnsubcribeToMovement()
@@ -131,48 +186,36 @@ void ARope::UnsubcribeToMovement()
 	TObjectPtr<AMyPlayerController> myPlayerController = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT).ActionTriggeredEvent.RemoveAll(this);
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.RemoveAll(this);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionStartedEvent.RemoveAll(this);
 }
 
-void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance)
+void ARope::StartJump(const FInputActionInstance& input)
+{
+	HasJumpInputStarted = true;
+}
+
+void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance) const
 {
 	FVector2D movementInput = inputActionInstance.GetValue().Get<FVector2D>();
 	movementInput = FVector2D{ movementInput.Y, movementInput.X };
 	movementInput.Normalize();
-	UE_LOG(LogTemp, Warning, TEXT("Movement: %f, %f"), movementInput.X, movementInput.Y);
-	FVector2D rotatedMovementInput = movementInput.GetRotated(CharacterHorizontalAngle);
-	rotatedMovementInput.Normalize();
-	UE_LOG(LogTemp, Warning, TEXT("Angle: %f"), CharacterHorizontalAngle);
-	UE_LOG(LogTemp, Warning, TEXT("Rotated movement: %f, %f"), rotatedMovementInput.X, rotatedMovementInput.Y);
-	Rope->AddForce({ rotatedMovementInput.X * 30000, rotatedMovementInput.Y * 30000, 0 }, FName{ "Bone_050" });
+	FVector2D rotatedMovementInput = movementInput.GetRotated(CharacterAttachHorizontalAngle);
+	Rope->AddForce({ rotatedMovementInput.X * RopeForce, rotatedMovementInput.Y * RopeForce, 0 }, BoneToApplyForce);
 }
 
-void ARope::ReleaseRope(const FInputActionInstance& inputActionInstance)
+void ARope::OnJumpTriggered(const FInputActionInstance& inputActionInstance)
 {
 	if (!HasJumpInputStarted)
 		return;
-	if (!IsOccupied)
-		return;
-	if (!AttachedCharacter)
-		return;
-	IsOccupied = false;
-	CanSwing = false;
-	FTimerHandle throwaway;
-	GetWorld()->GetTimerManager().SetTimer(throwaway, this, &ARope::ResetSwingableState, SwingCooldown, false);
-	AttachedCharacter->ExitSwingState();
-	AttachedCharacter->DetachFromActor({EDetachmentRule::KeepWorld, EDetachmentRule::KeepRelative, EDetachmentRule::KeepWorld, false});
-	AttachedCharacter->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	AttachedCharacter->GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Falling;
-	RopeDetachEvent.Broadcast();
-
-	AttachedCharacter = nullptr;
-	HasJumpInputStarted = false;
+	
+	TryDetachCharacter();
 }
+#pragma endregion
 
+#pragma region State
 void ARope::ResetSwingableState()
 {
 	CanSwing = true;
-	SphereCollision->OnComponentBeginOverlap.AddDynamic(this, &ARope::OnCharacterOverlap);
+	ActivateCollision();
 }
-
-FRopeAttachDelegate ARope::RopeAttachEvent;
-FRopeDetachDelegate ARope::RopeDetachEvent;
+#pragma endregion
