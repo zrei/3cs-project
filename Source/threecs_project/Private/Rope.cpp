@@ -47,6 +47,8 @@ void ARope::BeginPlay()
 {
 	Super::BeginPlay();
 
+	HasJumpInputStarted = false;
+
 	CanSwing = true;
 
 	this->Rope->SetAllBodiesBelowSimulatePhysics(FName{ "Bone_100" }, true);
@@ -99,7 +101,7 @@ void ARope::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, AActor* Othe
 	character->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	character->GetCharacterMovement()->StopMovementImmediately();
 
-	character->AttachToComponent(this->Rope, {EAttachmentRule::SnapToTarget, EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, true}, FName{"Bone_022"});
+	character->AttachToComponent(this->Rope, {EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true}, FName{"Bone_022"});
 	SubscribeToMovement();
 	RopeCamera->SetActive(true);
 	RopeAttachEvent.Broadcast(this);
@@ -116,6 +118,12 @@ void ARope::SubscribeToMovement()
 	TObjectPtr<AMyPlayerController> myPlayerController = Cast<AMyPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_MOVEMENT).ActionTriggeredEvent.AddUObject(this, &ARope::OnMovementTriggered);
 	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ARope::ReleaseRope);
+	myPlayerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionStartedEvent.AddUObject(this, &ARope::StartJump);
+}
+
+void ARope::StartJump(const FInputActionInstance& input)
+{
+	HasJumpInputStarted = true;
 }
 
 void ARope::UnsubcribeToMovement()
@@ -128,13 +136,20 @@ void ARope::UnsubcribeToMovement()
 void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
 	FVector2D movementInput = inputActionInstance.GetValue().Get<FVector2D>();
+	movementInput = FVector2D{ movementInput.Y, movementInput.X };
 	movementInput.Normalize();
 	UE_LOG(LogTemp, Warning, TEXT("Movement: %f, %f"), movementInput.X, movementInput.Y);
-	Rope->AddForce({ movementInput.X * 30000, movementInput.Y * 30000, 0 }, FName{ "Bone_050" });
+	FVector2D rotatedMovementInput = movementInput.GetRotated(CharacterHorizontalAngle);
+	rotatedMovementInput.Normalize();
+	UE_LOG(LogTemp, Warning, TEXT("Angle: %f"), CharacterHorizontalAngle);
+	UE_LOG(LogTemp, Warning, TEXT("Rotated movement: %f, %f"), rotatedMovementInput.X, rotatedMovementInput.Y);
+	Rope->AddForce({ rotatedMovementInput.X * 30000, rotatedMovementInput.Y * 30000, 0 }, FName{ "Bone_050" });
 }
 
 void ARope::ReleaseRope(const FInputActionInstance& inputActionInstance)
 {
+	if (!HasJumpInputStarted)
+		return;
 	if (!IsOccupied)
 		return;
 	if (!AttachedCharacter)
@@ -150,6 +165,7 @@ void ARope::ReleaseRope(const FInputActionInstance& inputActionInstance)
 	RopeDetachEvent.Broadcast();
 
 	AttachedCharacter = nullptr;
+	HasJumpInputStarted = false;
 }
 
 void ARope::ResetSwingableState()

@@ -78,4 +78,8 @@ private:
 	TObjectPtr<ABase_MyCharacter> AttachedCharacter;
 
 	bool CanSwing;
+
+	void StartJump(const FInputActionInstance& input);
+
+	bool HasJumpInputStarted;
 };
