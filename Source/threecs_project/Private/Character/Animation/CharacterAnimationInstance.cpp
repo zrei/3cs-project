@@ -22,6 +22,8 @@ void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 	UpdateLookState(deltaTime);
 
 	UpdateFootIK(deltaTime);
+
+	UpdateThighRotation(deltaTime);
 }
 
 void UCharacterAnimationInstance::InitializeCharacterReferences()
@@ -44,7 +46,9 @@ void UCharacterAnimationInstance::UpdateMovementState()
 	VelocityVector = CharacterMovementRef->Velocity;
 	double velocity = UKismetMathLibrary::VSizeXY(VelocityVector);
 	IsMoving = velocity > 0;
+	IsSwinging = CharacterRef->GetCurrentState().CharacterMovementState == ECharacterMovementState::SWINGING;
 	IsFalling = CharacterMovementRef->IsFalling();
+	IsInAir = IsSwinging || IsFalling;
 	CurrTurnBlendAlpha = IsMoving ? LocomotionSettings->MovingTurnBlendAlpha : LocomotionSettings->StationaryTurnBlendAlpha;
 }
 
@@ -226,5 +230,20 @@ void UCharacterAnimationInstance::SetFootLockOffsets(float deltaTime, FVector& l
 	localLocation = UKismetMathLibrary::RotateAngleAxis(localLocation - locationDifference, rotationDifference.Yaw, { 0, 0, -1 });
 	
 	localRotation = UKismetMathLibrary::NormalizedDeltaRotator(localRotation, rotationDifference);
+}
+#pragma endregion
+
+#pragma region Swinging
+void UCharacterAnimationInstance::UpdateThighRotation(float deltaTime)
+{
+	if (CharacterRef->GetCurrentState().CharacterMovementState != ECharacterMovementState::SWINGING)
+	{
+		CurrThighRotation = FRotator::ZeroRotator;
+		return;
+	}
+
+	const FVector2D& swingInput = CharacterRef->GetCurrentState().SwingingInput;
+	TargetRotation = {swingInput.X * MaxRotation, swingInput.Y * MaxRotation, 0};
+	CurrThighRotation = FMath::RInterpTo(CurrThighRotation, TargetRotation, deltaTime, ThighRotationInterpSpeed);
 }
 #pragma endregion

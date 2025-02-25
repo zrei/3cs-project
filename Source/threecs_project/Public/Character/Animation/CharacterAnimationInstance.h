@@ -76,6 +76,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
 	bool IsJumping = false;
+
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	bool IsSwinging = false;
+
+	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category="Locomotion")
+	bool IsInAir = false;
 #pragma endregion
 
 #pragma region Turning
@@ -160,5 +166,22 @@ private:
 	FVector FootOffsetLTarget;
 
 	FVector FootOffsetRTarget;
+#pragma endregion
+
+#pragma region Swinging
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Swing")
+	FRotator CurrThighRotation;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Swing")
+	float MaxRotation;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Swing")
+	float ThighRotationInterpSpeed;
+
+private:
+	FRotator TargetRotation;
+
+	void UpdateThighRotation(float deltaTime);
 #pragma endregion
 };

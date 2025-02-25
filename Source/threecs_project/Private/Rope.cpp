@@ -201,6 +201,7 @@ void ARope::OnMovementTriggered(const FInputActionInstance& inputActionInstance)
 	movementInput.Normalize();
 	FVector2D rotatedMovementInput = movementInput.GetRotated(CharacterAttachHorizontalAngle);
 	Rope->AddForce({ rotatedMovementInput.X * RopeForce, rotatedMovementInput.Y * RopeForce, 0 }, BoneToApplyForce);
+	AttachedCharacter->UpdateSwingInput(movementInput);
 }
 
 void ARope::OnJumpTriggered(const FInputActionInstance& inputActionInstance)

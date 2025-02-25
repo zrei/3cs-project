@@ -352,7 +352,7 @@ void ABase_MyCharacter::PlayTurningMontage()
 	{
 		playRate = FMath::Max(GetMovementSettings().CharacterWalkMovementSpeed / 2, CurrCharacterState.CurrCharacterSpeed) / GetMovementSettings().CharacterWalkMovementSpeed;
 	}
-	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, NormalTurnAnimationSettings->LegsSlotName, 0, 0, playRate);
+	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, NormalTurnAnimationSettings->LegsSlotName, 0, 0, playRate, 1, -1, CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING ? MovingTurnStartTime : 0);
 }
 
 void ABase_MyCharacter::StopCurrentlyPlayingTurningMontage()
@@ -460,7 +460,17 @@ bool ABase_MyCharacter::ExitSwingState()
 	AMyPlayerController* playerController = Cast<AMyPlayerController>(GetController());
 	SubscribeToLocomotionInputs(playerController);
 
+	CurrCharacterState.SwingingInput = FVector2D::Zero();
+
 	return true;
+}
+
+void ABase_MyCharacter::UpdateSwingInput(FVector2D swingInput)
+{
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
+		return;
+
+	CurrCharacterState.SwingingInput = swingInput;
 }
 #pragma endregion
 

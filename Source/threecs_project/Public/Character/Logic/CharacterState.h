@@ -36,6 +36,9 @@ struct FCharacterState
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector2D SwingingInput;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterMovementState CharacterMovementState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -68,13 +71,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float TargetCharacterSpeed;
 
-	FCharacterState() : CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
+	FCharacterState() : SwingingInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
 		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookYaw(0), CurrLookPitch(0),
 		CurrCharacterSpeed(0), TargetCharacterSpeed(0) {}
 
-	FCharacterState(ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
+	FCharacterState(FVector2D swingingInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
 		ECharacterGait characterGait, float targetCharacterRotation, float nextTargetCharacterRotation, float currCharacterRotation, float currLookYaw, float currLookPitch,
-		float currCharacterSpeed, float targetCharacterSpeed) : CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
+		float currCharacterSpeed, float targetCharacterSpeed) : SwingingInput(swingingInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
 		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
 		CurrCharacterRotation(currCharacterRotation), CurrLookYaw(currLookYaw), CurrLookPitch(currLookPitch), CurrCharacterSpeed(currCharacterSpeed),
 		TargetCharacterSpeed(targetCharacterSpeed) {}

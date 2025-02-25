@@ -120,6 +120,8 @@ private:
 
 	static constexpr float TurnAnimationTargetFrameRate = 30;
 
+	static constexpr float MovingTurnStartTime = 0.33;
+
 	float RotationCountdownTimer;
 
 	float RotationCurveScaleValue;
@@ -190,5 +192,7 @@ public:
 	bool EnterSwingState();
 
 	bool ExitSwingState();
+
+	void UpdateSwingInput(FVector2D swingInput);
 #pragma endregion
 };
