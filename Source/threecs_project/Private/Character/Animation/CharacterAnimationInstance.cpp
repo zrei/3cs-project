@@ -7,6 +7,7 @@
 #include "Data/Character/CharacterAnimationFeetIKSettings.h"
 #include "Data/Character/CharacterAnimationLocomotionSettings.h"
 #include "Data/Character/CharacterAnimationLookSettings.h"
+#include "Data/Character/CharacterAnimationSwingSettings.h"
 
 void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 {
@@ -89,6 +90,13 @@ void UCharacterAnimationInstance::ResetJumpState()
 #pragma region Look
 void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 {
+	if (IsSwinging)
+	{
+		LookYaw = FMath::FInterpTo(LookYaw, 0, deltaTime, LookSettings->LookYawInterpolationSpeed);
+		LookPitch = FMath::FInterpTo(LookPitch, 0, deltaTime, LookSettings->LookPitchInterpolationSpeed);
+		return;
+	}
+	
 	float diff = CharacterRef->GetCurrentState().TargetCharacterRotation - CharacterRef->GetCurrentState().CurrCharacterRotation;
 	float targetLookYaw = (FMath::Clamp(diff/90, -1, 1) + 1) / 2;
 	LookYaw = FMath::FInterpTo(LookYaw, targetLookYaw, deltaTime, LookSettings->LookYawInterpolationSpeed);
@@ -243,7 +251,7 @@ void UCharacterAnimationInstance::UpdateThighRotation(float deltaTime)
 	}
 
 	const FVector2D& swingInput = CharacterRef->GetCurrentState().SwingingInput;
-	TargetRotation = {swingInput.X * MaxRotation, swingInput.Y * MaxRotation, 0};
-	CurrThighRotation = FMath::RInterpTo(CurrThighRotation, TargetRotation, deltaTime, ThighRotationInterpSpeed);
+	TargetRotation = {-swingInput.Y * SwingSettings->MaxLegRotation, 0, -swingInput.X * SwingSettings->MaxLegRotation};
+	CurrThighRotation = FMath::RInterpTo(CurrThighRotation, TargetRotation, deltaTime, SwingSettings->LegRotationInterpSpeed);
 }
 #pragma endregion

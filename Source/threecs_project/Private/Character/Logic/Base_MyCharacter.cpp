@@ -352,6 +352,7 @@ void ABase_MyCharacter::PlayTurningMontage()
 	{
 		playRate = FMath::Max(GetMovementSettings().CharacterWalkMovementSpeed / 2, CurrCharacterState.CurrCharacterSpeed) / GetMovementSettings().CharacterWalkMovementSpeed;
 	}
+	RotationCurveScaleValue *= playRate;
 	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, NormalTurnAnimationSettings->LegsSlotName, 0, 0, playRate, 1, -1, CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING ? MovingTurnStartTime : 0);
 }
 
@@ -461,6 +462,10 @@ bool ABase_MyCharacter::ExitSwingState()
 	SubscribeToLocomotionInputs(playerController);
 
 	CurrCharacterState.SwingingInput = FVector2D::Zero();
+
+	FRotator currWorldRotation = GetActorRotation();
+	SetActorRotation({0, currWorldRotation.Yaw, 0});
+	CurrCharacterState.CurrCharacterRotation = currWorldRotation.Yaw;
 
 	return true;
 }

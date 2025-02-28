@@ -5,6 +5,7 @@
 class UCharacterAnimationLocomotionSettings;
 class UCharacterAnimationFeetIKSettings;
 class UCharacterAnimationLookSettings;
+class UCharacterAnimationSwingSettings;
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
@@ -174,10 +175,7 @@ protected:
 	FRotator CurrThighRotation;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Swing")
-	float MaxRotation;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Swing")
-	float ThighRotationInterpSpeed;
+	TObjectPtr<UCharacterAnimationSwingSettings> SwingSettings;
 
 private:
 	FRotator TargetRotation;
