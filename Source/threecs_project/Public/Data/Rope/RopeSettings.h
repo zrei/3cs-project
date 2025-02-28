@@ -37,8 +37,8 @@ public:
 	float RopeForce = 30000.0;
 
 	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(ClampMin = 0))
-	float CharacterOffset = 13;
+	float CharacterOffset = 22;
 
 	UPROPERTY(EditAnywhere, Category="Collision Setup", meta=(ClampMin = 0))
-	float SphereColliderRadius = 5;
+	float SphereColliderRadius = 25;
 };

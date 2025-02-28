@@ -92,7 +92,7 @@ void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 {
 	if (IsSwinging)
 	{
-		LookYaw = FMath::FInterpTo(LookYaw, 0, deltaTime, LookSettings->LookYawInterpolationSpeed);
+		LookYaw = FMath::FInterpTo(LookYaw, 0.5, deltaTime, LookSettings->LookYawInterpolationSpeed);
 		LookPitch = FMath::FInterpTo(LookPitch, 0, deltaTime, LookSettings->LookPitchInterpolationSpeed);
 		return;
 	}
