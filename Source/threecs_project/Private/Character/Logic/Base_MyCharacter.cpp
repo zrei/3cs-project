@@ -466,6 +466,8 @@ bool ABase_MyCharacter::ExitSwingState()
 	FRotator currWorldRotation = GetActorRotation();
 	SetActorRotation({0, currWorldRotation.Yaw, 0});
 	CurrCharacterState.CurrCharacterRotation = currWorldRotation.Yaw;
+	CurrCharacterState.CurrLookYaw = currWorldRotation.Yaw;
+	CurrCharacterState.CurrLookPitch = 0;
 
 	return true;
 }

@@ -2,7 +2,7 @@
 
 
 #include "Camera/MyPlayerCameraManager.h"
-#include "Rope.h"
+#include "Interactables/Rope.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 

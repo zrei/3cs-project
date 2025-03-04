@@ -7,12 +7,14 @@ class ARope;
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interactables/RopeState.h"
 #include "ControlsDisplayWidget.generated.h"
 
 enum class EControlScheme : uint8
 {
 	NORMAL,
-	ROPE_SWING
+	ROPE_SWING,
+	ROPE_SHIMMY
 };
 
 /**
@@ -28,7 +30,10 @@ protected:
 	TObjectPtr<UVerticalBox> NormalControlsPanel;
 
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UVerticalBox> SwingControlsPanel;
+	TObjectPtr<UVerticalBox> RopeSwingControlsPanel;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UVerticalBox> RopeShimmyControlsPanel;
 
 	virtual void NativeConstruct() override;
 
@@ -40,6 +45,8 @@ private:
 	void OnRopeAttach(ARope* const);
 
 	void OnRopeDetach();
+
+	void OnRopeStateToggle(ERopeInputState);
 
 	void ToggleVisibility(EControlScheme);
 };

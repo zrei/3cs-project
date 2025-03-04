@@ -39,6 +39,9 @@ public:
 	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(ClampMin = 0))
 	float CharacterOffset = 22;
 
+	UPROPERTY(EditANywhere, Category="Visual Setup", meta=(ClampMin = 0))
+	int NumberOfBonesToOffsetGrip = 5;
+
 	UPROPERTY(EditAnywhere, Category="Collision Setup", meta=(ClampMin = 0))
 	float SphereColliderRadius = 25;
 };

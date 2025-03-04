@@ -5,14 +5,16 @@
 struct FInputActionInstance;
 class UCameraComponent;
 class ABase_MyCharacter;
-class URopeSettings;
+class URopeMovementSettings;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
 #include "Data/Rope/RopeSettings.h"
+#include "Interactables/RopeState.h"
 #include "Rope.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FRopeStateToggleDelegate, ERopeInputState);
 DECLARE_MULTICAST_DELEGATE_OneParam(FRopeAttachDelegate, ARope* const);
 DECLARE_MULTICAST_DELEGATE(FRopeDetachDelegate);
 
@@ -47,7 +49,6 @@ private:
 	inline FString GetBoneName(unsigned int boneNumber)
 	{
 		FString boneNumberString = FString::FromInt(boneNumber);
-		// this is so hacky
 		if (boneNumber < 10)
 		{
 			boneNumberString = FString{"00"} + boneNumberString;
@@ -57,6 +58,12 @@ private:
 			boneNumberString = FString{ "0" } + boneNumberString;
 		}
 		return RopeSettings->BonePrefix + boneNumberString;
+	}
+
+	inline int GetBoneNumber(FString boneName)
+	{
+		boneName.RemoveFromStart(RopeSettings->BonePrefix);
+		return FCString::Atoi(*boneName);
 	}
 
 	FName BoneToSimulatePhysics;
@@ -79,7 +86,9 @@ public:
 	TObjectPtr<UCameraComponent> RopeCamera;
 
 private:
-	float CameraOffset;
+	float HorizontalCameraOffset;
+
+	float VerticalCameraOffset;
 
 private:
 	void UpdateCameraPositionAndRotation();
@@ -121,7 +130,15 @@ private:
 
 	TObjectPtr<ABase_MyCharacter> AttachedCharacter;
 
-	float CharacterAttachHorizontalAngle;
+	float TargetCharacterAttachHorizontalAngle;
+
+	float CurrCharacterAttachHorizontalAngle;
+
+	unsigned int AttachedBone;
+
+	FName AttachedBoneName;
+
+	FName VisualAttachedBoneName;
 
 	constexpr static float InitialVelocityMultiplier = 5;
 
@@ -142,21 +159,39 @@ public:
 
 #pragma region Input
 private:
-	void OnMovementTriggered(const FInputActionInstance& input) const;
+	void OnMovementInputTriggered(const FInputActionInstance& input);
 
-	void OnMovementCompleted(const FInputActionInstance& input) const;
+	void OnMovementInputCompleted(const FInputActionInstance& input) const;
 
-	void SubscribeToMovement();
+	void OnToggleControls(const FInputActionInstance& input);
 
-	void UnsubscribeToMovement();
+	void SubscribeToInput();
 
-	void StartJump(const FInputActionInstance& input);
+	void UnsubscribeToInput();
 
-	void OnJumpTriggered(const FInputActionInstance& input);
+	void StartRelease(const FInputActionInstance& input);
+
+	void OnReleaseTriggered(const FInputActionInstance& input);
 
 	bool HasJumpInputStarted;
 
 	FName BoneToApplyForce;
+#pragma endregion
+
+#pragma region Swing
+private:
+	void OnSwing(FVector2D normalizedMovementInput) const;
+#pragma endregion
+
+#pragma region Shimmy
+private:
+	void OnShimmy(FVector2D normalizedMovementInput);
+
+	void AdjustHorizontalPosition(float deltaTime);
+
+protected:
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<URopeMovementSettings> RopeMovementSettings;
 #pragma endregion
 
 #pragma region State
@@ -165,8 +200,13 @@ private:
 
 	bool CanSwing;
 
+	ERopeInputState InputState;
+
 	void ResetSwingableState();
 
 	FTimerHandle ResetSwingStateTimer;
+
+public:
+	static FRopeStateToggleDelegate RopeStateToggleEvent;
 #pragma endregion
 };
