@@ -71,16 +71,25 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float TargetCharacterSpeed;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector LeftHandPosition;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector RightHandPosition;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool EnableHandIK;
+
 	FCharacterState() : SwingingInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
 		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookYaw(0), CurrLookPitch(0),
-		CurrCharacterSpeed(0), TargetCharacterSpeed(0) {}
+		CurrCharacterSpeed(0), TargetCharacterSpeed(0), LeftHandPosition(), RightHandPosition(), EnableHandIK(false) { }
 
 	FCharacterState(FVector2D swingingInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
 		ECharacterGait characterGait, float targetCharacterRotation, float nextTargetCharacterRotation, float currCharacterRotation, float currLookYaw, float currLookPitch,
-		float currCharacterSpeed, float targetCharacterSpeed) : SwingingInput(swingingInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
+		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK) : SwingingInput(swingingInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
 		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
 		CurrCharacterRotation(currCharacterRotation), CurrLookYaw(currLookYaw), CurrLookPitch(currLookPitch), CurrCharacterSpeed(currCharacterSpeed),
-		TargetCharacterSpeed(targetCharacterSpeed) {}
+		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK) {}
 };
 
 USTRUCT(BlueprintType)

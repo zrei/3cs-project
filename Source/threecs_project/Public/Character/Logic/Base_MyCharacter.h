@@ -194,5 +194,8 @@ public:
 	bool ExitSwingState();
 
 	void UpdateSwingInput(FVector2D swingInput);
+
+public:
+	void UpdateHandPositions(FVector left, FVector right);
 #pragma endregion
 };

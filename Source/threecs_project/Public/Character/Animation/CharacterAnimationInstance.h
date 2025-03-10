@@ -182,4 +182,19 @@ private:
 
 	void UpdateThighRotation(float deltaTime);
 #pragma endregion
+protected:
+	UPROPERTY(BlueprintReadOnly, Category="Hand IK")
+	FVector LeftHandPosition;
+
+	UPROPERTY(BlueprintReadOnly, Category="Hand IK")
+	FVector RightHandPosition;
+
+	UPROPERTY(BlueprintReadOnly, Category="Hand IK")
+	float LeftHandIKAlpha;
+
+	UPROPERTY(BlueprintReadOnly, Category="Hand IK")
+	float RightHandIKAlpha;
+
+private:
+	void UpdateHandIK();
 };

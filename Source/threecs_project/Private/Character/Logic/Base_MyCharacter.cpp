@@ -47,6 +47,9 @@ void ABase_MyCharacter::BeginPlay()
 	CurrCharacterState.CurrCharacterRotation = CurrCharacterState.CurrLookYaw;
 	CurrCharacterState.TargetCharacterRotation = CurrCharacterState.CurrLookYaw;
 	CurrCharacterState.NextTargetCharacterRotation = CurrCharacterState.CurrLookYaw;
+	CurrCharacterState.EnableHandIK = false;
+	CurrCharacterState.LeftHandPosition = FVector::Zero();
+	CurrCharacterState.RightHandPosition = FVector::Zero();
 
 	HasCameraInput = false;
 	CameraInput = FVector2D::Zero();
@@ -434,6 +437,7 @@ bool ABase_MyCharacter::EnterSwingState()
 		return false;
 	
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::SWINGING;
+	CurrCharacterState.EnableHandIK = true;
 
 	GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Flying;
 	GetCharacterMovement()->StopMovementImmediately();
@@ -454,6 +458,7 @@ bool ABase_MyCharacter::ExitSwingState()
 		return false;
 
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::JUMPING;
+	CurrCharacterState.EnableHandIK = false;
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Falling;
@@ -542,4 +547,10 @@ void ABase_MyCharacter::Tick(float deltaTime)
 		Move(deltaTime);
 
 	RotateCamera();
+}
+
+void ABase_MyCharacter::UpdateHandPositions(FVector left, FVector right)
+{
+	CurrCharacterState.LeftHandPosition = left;
+	CurrCharacterState.RightHandPosition = right;
 }

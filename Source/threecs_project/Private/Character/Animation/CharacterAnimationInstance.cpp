@@ -24,6 +24,8 @@ void UCharacterAnimationInstance::AnimationUpdate(float deltaTime)
 
 	UpdateFootIK(deltaTime);
 
+	UpdateHandIK();
+
 	UpdateThighRotation(deltaTime);
 }
 
@@ -255,3 +257,13 @@ void UCharacterAnimationInstance::UpdateThighRotation(float deltaTime)
 	CurrThighRotation = FMath::RInterpTo(CurrThighRotation, TargetRotation, deltaTime, SwingSettings->LegRotationInterpSpeed);
 }
 #pragma endregion
+
+void UCharacterAnimationInstance::UpdateHandIK()
+{
+	LeftHandIKAlpha = CharacterRef->GetCurrentState().EnableHandIK ? 1.0f : 0.0f;
+	RightHandIKAlpha = CharacterRef->GetCurrentState().EnableHandIK ? 1.0f : 0.0f;
+	//UE_LOG(LogTemp, Warning, TEXT("Left hand: %f"), LeftHandIKAlpha);
+	LeftHandPosition = CharacterRef->GetCurrentState().LeftHandPosition;
+	//UE_LOG(LogTemp, Warning, TEXT("Left hand position: (%f, %f, %f)"), LeftHandPosition.X, LeftHandPosition.Y, LeftHandPosition.Z);
+	RightHandPosition = CharacterRef->GetCurrentState().RightHandPosition;
+}

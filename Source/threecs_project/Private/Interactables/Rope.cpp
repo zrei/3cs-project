@@ -94,6 +94,18 @@ void ARope::Tick(float deltaTime)
 	{
 		UpdateCameraPositionAndRotation();
 		AdjustHorizontalPosition(deltaTime);
+		FVector bonePosition = Rope->GetBoneLocation(FName(GetBoneName(AttachedBone + RopeSettings->NumberOfBonesToOffsetGrip)));
+		//AttachedCharacter->UpdateHandPositions(bonePosition - AttachedCharacter->GetActorRightVector() * RopeSettings->LeftHandGripOffset, bonePosition + AttachedCharacter->GetActorRightVector() * RopeSettings->RightHandGripOffset);
+		FVector leftHandOffset = AttachedCharacter->GetMesh()->GetBoneLocation("Hand_L") - AttachedCharacter->GetActorLocation();
+		leftHandOffset = leftHandOffset.RotateAngleAxis(-AttachedCharacter->GetActorRotation().Yaw, {0, 0, 1});
+		FVector leftHandOffsetUnit = leftHandOffset;
+		leftHandOffsetUnit.Normalize();
+		UE_LOG(LogTemp, Warning, TEXT("Left hand offset: (%f, %f, %f), magnitude: %f"), leftHandOffsetUnit.X, leftHandOffsetUnit.Y, leftHandOffsetUnit.Z, leftHandOffset.Length());
+		FVector rightHandOffset = AttachedCharacter->GetMesh()->GetBoneLocation("hand_r") - AttachedCharacter->GetActorLocation();
+		rightHandOffset = rightHandOffset.RotateAngleAxis(-AttachedCharacter->GetActorRotation().Yaw, { 0, 0, 1 });
+		FVector rightHandOffsetUnit = rightHandOffset;
+		rightHandOffsetUnit.Normalize();
+		UE_LOG(LogTemp, Warning, TEXT("Right hand offset: (%f, %f, %f), magnitude: %f"), rightHandOffsetUnit.X, rightHandOffsetUnit.Y, rightHandOffsetUnit.Z, rightHandOffset.Length());
 	}
 }
 #pragma endregion
