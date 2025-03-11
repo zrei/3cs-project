@@ -353,7 +353,7 @@ void ABase_MyCharacter::PlayTurningMontage()
 	// scale play rate if moving to match movement speed
 	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING)
 	{
-		playRate = FMath::Max(GetMovementSettings().CharacterWalkMovementSpeed / 2, CurrCharacterState.CurrCharacterSpeed) / GetMovementSettings().CharacterWalkMovementSpeed;
+		playRate = CurrCharacterState.CurrCharacterSpeed * GetMovementSettings().MovingRotationSpeedPlayRateScale;
 	}
 	RotationCurveScaleValue *= playRate;
 	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, NormalTurnAnimationSettings->LegsSlotName, 0, 0, playRate, 1, -1, CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING ? MovingTurnStartTime : 0);

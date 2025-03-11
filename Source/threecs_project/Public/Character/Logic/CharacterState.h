@@ -117,22 +117,24 @@ public:
 	float CharacterMovingRotationalSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MovingRotationTime;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RotationAngleThreshold;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RotationLookTimeThreshold;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MovingRotationSpeedPlayRateScale = 10;
+
 	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0), CharacterDecceleration(0),
-		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), RotationAngleThreshold(0), RotationLookTimeThreshold(0) {}
+		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), RotationAngleThreshold(0), RotationLookTimeThreshold(0),
+		MovingRotationSpeedPlayRateScale(0) {}
 
 	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterAcceleration, float characterDecceleration,
-		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float movingRotationTime, float rotationAngleThreshold, float rotationLookTimeThreshold)
-		: CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
+		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float rotationAngleThreshold, float rotationLookTimeThreshold,
+		float movingRotationSpeedPlayRateScale) : CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
 		CharacterAcceleration(characterAcceleration), CharacterDecceleration(characterDecceleration), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
-		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), RotationAngleThreshold(rotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold) {}
+		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), RotationAngleThreshold(rotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold),
+		MovingRotationSpeedPlayRateScale(movingRotationSpeedPlayRateScale) {}
 };
 
 USTRUCT(BlueprintType)
