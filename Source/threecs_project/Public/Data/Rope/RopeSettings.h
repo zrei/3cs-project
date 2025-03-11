@@ -47,17 +47,17 @@ public:
 	UPROPERTY(EditANywhere, Category="Visual Setup", meta=(ClampMin = 0))
 	int NumberOfBonesToOffsetGrip = 10;
 
-	UPROPERTY(EditAnywhere, Category="Visual Setup")
-	FVector LeftHandGripOffsetDirection;
+	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(Tooltip="Offset direction from the visual bone for the left hand"))
+	FVector LeftHandGripOffsetDirection = { 0, 0.707107, -0.707107 };
 
 	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(Tooltip="Amount to offset the left hand from the grip bone"))
-	float LeftHandGripOffsetAmount = 5;
+	float LeftHandGripOffsetAmount = 7.0;
 
-	UPROPERTY(EditAnywhere, Category="Visual Setup")
-	FVector RightHandGripOffsetDirection;
+	UPROPERTY(EditAnywhere, Category="Visual Setup", meta = (Tooltip = "Offset direction from the visual bone for the right hand"))
+	FVector RightHandGripOffsetDirection = { -0.57735, 0.57735, 0.57735 };
 
 	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(Tooltip="Amount to offset the right hand from the grip bone"))
-	float RightHandGripOffsetAmount = 5;
+	float RightHandGripOffsetAmount = 17.0;
 #pragma endregion
 
 #pragma region Collision Setup
