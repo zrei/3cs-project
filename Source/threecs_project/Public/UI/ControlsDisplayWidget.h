@@ -3,19 +3,13 @@
 #pragma once
 
 class UVerticalBox;
-class ARope;
+class ABase_MyCharacter;
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Interactables/RopeState.h"
+#include "UI/ControlScheme.h"
 #include "ControlsDisplayWidget.generated.h"
-
-enum class EControlScheme : uint8
-{
-	NORMAL,
-	ROPE_SWING,
-	ROPE_SHIMMY
-};
 
 /**
  * 
@@ -42,11 +36,7 @@ protected:
 	virtual void NativeDestruct() override;
 
 private:
-	void OnRopeAttach(ARope* const);
+	void ToggleVisibility(EControlScheme controlScheme);
 
-	void OnRopeDetach();
-
-	void OnRopeStateToggle(ERopeInputState);
-
-	void ToggleVisibility(EControlScheme);
+	TObjectPtr<ABase_MyCharacter> Character;
 };

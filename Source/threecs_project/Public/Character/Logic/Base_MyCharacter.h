@@ -14,7 +14,10 @@ class AMyPlayerController;
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
 #include "Character/Logic/CharacterState.h"
+#include "UI/ControlScheme.h"
 #include "Base_MyCharacter.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FControlSchemeDelegate, EControlScheme);
 
 /*
 View direction is calculated and stored whenever the camera is adjusted.
@@ -70,8 +73,6 @@ private:
 	float GetMovementRotation() const;
 
 	void OnCharacterJump(const FInputActionInstance& inputActionInstance);
-
-	FVector2D MovementInput;
 #pragma endregion
 
 #pragma region Rotation
@@ -193,9 +194,9 @@ public:
 
 	bool ExitSwingState();
 
-	void UpdateSwingInput(FVector2D swingInput);
-
-public:
 	void UpdateHandPositions(FVector left, FVector right);
 #pragma endregion
+
+public:
+	FControlSchemeDelegate ControlSchemeChangedEvent;
 };

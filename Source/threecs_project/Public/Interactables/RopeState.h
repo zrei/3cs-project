@@ -2,8 +2,12 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
+#include "RopeState.generated.h"
+
+UENUM(BlueprintType)
 enum class ERopeInputState : uint8
 {
-	SWING,
-	SHIMMY
+	SWING UMETA(DisplayName = "Swing"),
+	SHIMMY UMETA(DisplayName = "Shimmy")
 };

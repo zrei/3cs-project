@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interactables/RopeState.h"
 #include "CharacterState.generated.h"
 
 UENUM(BlueprintType)
@@ -11,7 +12,8 @@ enum class ECharacterMovementState : uint8
 	IDLE UMETA(DisplayName = "Idle"),
 	MOVING UMETA(DisplayName = "Moving"),
 	JUMPING UMETA(DisplayName = "Jumping"),
-	SWINGING UMETA(DisplayName = "Swinging")
+	SWINGING UMETA(DisplayName = "Swinging"),
+	EXIT_SWINGING UMETA(DisplayName = "ExitSwinging")
 };
 
 UENUM(BlueprintType)
@@ -36,7 +38,7 @@ struct FCharacterState
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	FVector2D SwingingInput;
+	FVector2D MovementInput;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterMovementState CharacterMovementState;
@@ -80,16 +82,19 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool EnableHandIK;
 
-	FCharacterState() : SwingingInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
-		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookYaw(0), CurrLookPitch(0),
-		CurrCharacterSpeed(0), TargetCharacterSpeed(0), LeftHandPosition(), RightHandPosition(), EnableHandIK(false) { }
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	ERopeInputState RopeInputState;
 
-	FCharacterState(FVector2D swingingInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
+	FCharacterState() : MovementInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
+		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookYaw(0), CurrLookPitch(0),
+		CurrCharacterSpeed(0), TargetCharacterSpeed(0), LeftHandPosition(), RightHandPosition(), EnableHandIK(false), RopeInputState(ERopeInputState::SWING) { }
+
+	FCharacterState(FVector2D movementInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
 		ECharacterGait characterGait, float targetCharacterRotation, float nextTargetCharacterRotation, float currCharacterRotation, float currLookYaw, float currLookPitch,
-		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK) : SwingingInput(swingingInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
+		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK, ERopeInputState ropeInputState) : MovementInput(movementInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
 		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
 		CurrCharacterRotation(currCharacterRotation), CurrLookYaw(currLookYaw), CurrLookPitch(currLookPitch), CurrCharacterSpeed(currCharacterSpeed),
-		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK) {}
+		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK), RopeInputState(ropeInputState) {}
 };
 
 USTRUCT(BlueprintType)

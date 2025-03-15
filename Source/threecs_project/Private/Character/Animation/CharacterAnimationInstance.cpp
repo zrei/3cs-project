@@ -246,13 +246,13 @@ void UCharacterAnimationInstance::SetFootLockOffsets(float deltaTime, FVector& l
 #pragma region Swinging
 void UCharacterAnimationInstance::UpdateThighRotation(float deltaTime)
 {
-	if (CharacterRef->GetCurrentState().CharacterMovementState != ECharacterMovementState::SWINGING)
+	if (CharacterRef->GetCurrentState().CharacterMovementState != ECharacterMovementState::SWINGING || CharacterRef->GetCurrentState().RopeInputState == ERopeInputState::SHIMMY)
 	{
 		CurrThighRotation = FRotator::ZeroRotator;
 		return;
 	}
 
-	const FVector2D& swingInput = CharacterRef->GetCurrentState().SwingingInput;
+	FVector2D swingInput = {CharacterRef->GetCurrentState().MovementInput.Y, CharacterRef->GetCurrentState().MovementInput.X};
 	TargetRotation = {-swingInput.Y * SwingSettings->MaxLegRotation, 0, -swingInput.X * SwingSettings->MaxLegRotation};
 	CurrThighRotation = FMath::RInterpTo(CurrThighRotation, TargetRotation, deltaTime, SwingSettings->LegRotationInterpSpeed);
 }

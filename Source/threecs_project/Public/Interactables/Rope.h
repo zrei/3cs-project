@@ -14,10 +14,6 @@ class URopeMovementSettings;
 #include "Interactables/RopeState.h"
 #include "Rope.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FRopeStateToggleDelegate, ERopeInputState);
-DECLARE_MULTICAST_DELEGATE_OneParam(FRopeAttachDelegate, ARope* const);
-DECLARE_MULTICAST_DELEGATE(FRopeDetachDelegate);
-
 UCLASS()
 class THREECS_PROJECT_API ARope : public AActor
 {
@@ -142,9 +138,6 @@ private:
 
 	constexpr static float InitialVelocityMultiplier = 5;
 
-public:
-	static FRopeAttachDelegate RopeAttachEvent;
-
 #pragma endregion
 
 #pragma region Detach
@@ -152,40 +145,23 @@ private:
 	bool TryDetachCharacter();
 
 	constexpr static float LaunchVelocityMultiplier = 5;
-
-public:
-	static FRopeDetachDelegate RopeDetachEvent;
 #pragma endregion
 
 #pragma region Input
 private:
-	void OnMovementInputTriggered(const FInputActionInstance& input);
-
-	void OnMovementInputCompleted(const FInputActionInstance& input) const;
-
-	void OnToggleControls(const FInputActionInstance& input);
-
-	void SubscribeToInput();
-
-	void UnsubscribeToInput();
-
-	void StartRelease(const FInputActionInstance& input);
-
-	void OnReleaseTriggered(const FInputActionInstance& input);
-
-	bool HasJumpInputStarted;
+	void CheckCharacterInputs(float deltaTime);
 
 	FName BoneToApplyForce;
 #pragma endregion
 
 #pragma region Swing
 private:
-	void OnSwing(FVector2D normalizedMovementInput) const;
+	void OnSwing(FVector2D normalizedMovementInput, float deltaTime) const;
 #pragma endregion
 
 #pragma region Shimmy
 private:
-	void OnShimmy(FVector2D normalizedMovementInput);
+	void OnShimmy(FVector2D normalizedMovementInput, float deltaTime);
 
 	void AdjustHorizontalPosition(float deltaTime);
 
@@ -200,13 +176,8 @@ private:
 
 	bool CanSwing;
 
-	ERopeInputState InputState;
-
 	void ResetSwingableState();
 
 	FTimerHandle ResetSwingStateTimer;
-
-public:
-	static FRopeStateToggleDelegate RopeStateToggleEvent;
 #pragma endregion
 };

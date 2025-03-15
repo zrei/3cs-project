@@ -94,7 +94,7 @@ void ABase_MyCharacter::SubscribeToLocomotionInputs(AMyPlayerController* const p
 	locomotionMovementWrapper.ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementStarted);
 	locomotionMovementWrapper.ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementTriggered);
 	locomotionMovementWrapper.ActionCompletedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterMovementComplete);
-	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionTriggeredEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
+	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_JUMPING).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnCharacterJump);
 	playerController->GetActionInputWrapper(FInputType::LOCOMOTION_GAIT).ActionStartedEvent.AddUObject(this, &ABase_MyCharacter::OnGaitChangeTriggered);
 }
 
@@ -112,7 +112,7 @@ void ABase_MyCharacter::UnsubscribeToLocomotionInputs(AMyPlayerController* const
 #pragma region Movement
 void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _)
 {
-	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::JUMPING)
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::JUMPING && CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
 		CurrCharacterState.CharacterMovementState = ECharacterMovementState::MOVING;
 	// reset gait to walk
 	CurrCharacterState.CharacterGait = ECharacterGait::WALK;
@@ -122,8 +122,8 @@ void ABase_MyCharacter::OnCharacterMovementStarted(const FInputActionInstance& _
 
 void ABase_MyCharacter::OnCharacterMovementTriggered(const FInputActionInstance& inputActionInstance)
 {
-	MovementInput = inputActionInstance.GetValue().Get<FVector2D>();
-	MovementInput.Normalize();
+	CurrCharacterState.MovementInput = inputActionInstance.GetValue().Get<FVector2D>();
+	CurrCharacterState.MovementInput.Normalize();
 	SetTargetCharacterRotation();
 	RotationCountdownTimer = 0;
 
@@ -138,19 +138,19 @@ void ABase_MyCharacter::Move(float deltaTime)
 	FRotator characterRotation{ 0, CurrCharacterState.CurrLookYaw, 0 };
 	
 	FVector forwardDirection = UKismetMathLibrary::GetForwardVector(characterRotation);
-	float forwardMovementAmount = MovementInput.Y * CurrCharacterState.CurrCharacterSpeed;
+	float forwardMovementAmount = CurrCharacterState.MovementInput.Y * CurrCharacterState.CurrCharacterSpeed;
 	AddMovementInput(forwardDirection, forwardMovementAmount);
 
 	FVector rightDirection = UKismetMathLibrary::GetRightVector(characterRotation);
-	float rightMovementAmount = MovementInput.X * CurrCharacterState.CurrCharacterSpeed;
+	float rightMovementAmount = CurrCharacterState.MovementInput.X * CurrCharacterState.CurrCharacterSpeed;
 	AddMovementInput(rightDirection, rightMovementAmount);
 }
 
 void ABase_MyCharacter::OnCharacterMovementComplete(const FInputActionInstance& _)
 {
-	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::JUMPING)
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::JUMPING && CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
 		CurrCharacterState.CharacterMovementState = ECharacterMovementState::IDLE;
-	MovementInput = FVector2D::Zero();
+	CurrCharacterState.MovementInput = FVector2D::Zero();
 	SetTargetCharacterMovementSpeed();
 	SetTargetCharacterRotation();
 	StopCurrentlyPlayingTurningMontage();	
@@ -180,9 +180,9 @@ void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 
 float ABase_MyCharacter::GetMovementRotation() const
 {
-	const float dotProduct = FVector2D{ 0, 1 }.Dot(MovementInput);
+	const float dotProduct = FVector2D{ 0, 1 }.Dot(CurrCharacterState.MovementInput);
 	float movementRotation = FMath::Acos(dotProduct) * (180 / PI);
-	if (MovementInput.X < 0)
+	if (CurrCharacterState.MovementInput.X < 0)
 		movementRotation = -movementRotation;
 	return movementRotation;
 }
@@ -193,7 +193,7 @@ void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, ui
 
 	if (prevMovementMode == EMovementMode::MOVE_Falling)
 	{
-		if (MovementInput != FVector2D::Zero())
+		if (CurrCharacterState.MovementInput != FVector2D::Zero())
 			CurrCharacterState.CharacterMovementState = ECharacterMovementState::MOVING;
 		else
 			CurrCharacterState.CharacterMovementState = ECharacterMovementState::IDLE;
@@ -205,6 +205,14 @@ void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
 	// cannot jump while already jumping
 	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::JUMPING)
 		return;
+
+	// jump off rope if swinging
+	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::SWINGING)
+	{
+		CurrCharacterState.CharacterMovementState = ECharacterMovementState::EXIT_SWINGING;
+		return;
+	}
+
 	StopCurrentlyPlayingTurningMontage();
 	Jump();
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::JUMPING;
@@ -214,6 +222,13 @@ void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
 #pragma region Gait
 void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 {
+	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::SWINGING)
+	{
+		CurrCharacterState.RopeInputState = CurrCharacterState.RopeInputState == ERopeInputState::SHIMMY ? ERopeInputState::SWING : ERopeInputState::SHIMMY;
+		ControlSchemeChangedEvent.Broadcast(CurrCharacterState.RopeInputState == ERopeInputState::SHIMMY ? EControlScheme::ROPE_SHIMMY : EControlScheme::ROPE_SWING);
+		return;
+	}
+	
 	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::MOVING)
 		return;
 	CurrCharacterState.CharacterGait = CurrCharacterState.CharacterGait == ECharacterGait::RUN ? ECharacterGait::WALK : ECharacterGait::RUN;
@@ -444,29 +459,27 @@ bool ABase_MyCharacter::EnterSwingState()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	AMyPlayerController* playerController = Cast<AMyPlayerController>(GetController());
-	UnsubscribeToLocomotionInputs(playerController);
 
 	StopCurrentlyPlayingTurningMontage();
-	MovementInput = FVector2D::Zero();
-
+	ControlSchemeChangedEvent.Broadcast(EControlScheme::ROPE_SWING);
 	return true;
 }
 
 bool ABase_MyCharacter::ExitSwingState()
 {
-	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
+	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::EXIT_SWINGING)
 		return false;
 
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::JUMPING;
+	CurrCharacterState.RopeInputState = ERopeInputState::SWING;
 	CurrCharacterState.EnableHandIK = false;
 
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCharacterMovement()->MovementMode = EMovementMode::MOVE_Falling;
 
 	AMyPlayerController* playerController = Cast<AMyPlayerController>(GetController());
-	SubscribeToLocomotionInputs(playerController);
 
-	CurrCharacterState.SwingingInput = FVector2D::Zero();
+	CurrCharacterState.MovementInput = FVector2D::Zero();
 
 	FRotator currWorldRotation = GetActorRotation();
 	SetActorRotation({0, currWorldRotation.Yaw, 0});
@@ -474,15 +487,9 @@ bool ABase_MyCharacter::ExitSwingState()
 	CurrCharacterState.CurrLookYaw = currWorldRotation.Yaw;
 	CurrCharacterState.CurrLookPitch = 0;
 
+	ControlSchemeChangedEvent.Broadcast(EControlScheme::NORMAL);
+
 	return true;
-}
-
-void ABase_MyCharacter::UpdateSwingInput(FVector2D swingInput)
-{
-	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
-		return;
-
-	CurrCharacterState.SwingingInput = swingInput;
 }
 #pragma endregion
 

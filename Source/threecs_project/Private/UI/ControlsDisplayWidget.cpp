@@ -1,24 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "UI/ControlsDisplayWidget.h"
 #include "Components/VerticalBox.h"
-#include "Interactables/Rope.h"
-
-void UControlsDisplayWidget::OnRopeAttach(ARope* const)
-{
-	ToggleVisibility(EControlScheme::ROPE_SWING);
-}
-
-void UControlsDisplayWidget::OnRopeDetach()
-{
-	ToggleVisibility(EControlScheme::NORMAL);
-}
-
-void UControlsDisplayWidget::OnRopeStateToggle(ERopeInputState ropeInputState)
-{
-	ToggleVisibility(ropeInputState == ERopeInputState::SHIMMY ? EControlScheme::ROPE_SHIMMY : EControlScheme::ROPE_SWING);
-}
+#include "Character/Logic/Base_MyCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 void UControlsDisplayWidget::ToggleVisibility(EControlScheme controlScheme)
 {
@@ -34,14 +19,13 @@ void UControlsDisplayWidget::NativeConstruct()
 
 void UControlsDisplayWidget::NativeOnInitialized()
 {
-	ARope::RopeAttachEvent.AddUObject(this, &UControlsDisplayWidget::OnRopeAttach);
-	ARope::RopeDetachEvent.AddUObject(this, &UControlsDisplayWidget::OnRopeDetach);
-	ARope::RopeStateToggleEvent.AddUObject(this, &UControlsDisplayWidget::OnRopeStateToggle);
+	Character = Cast<ABase_MyCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	if (Character)
+		Character->ControlSchemeChangedEvent.AddUObject(this, &UControlsDisplayWidget::ToggleVisibility);
 }
 
 void UControlsDisplayWidget::NativeDestruct()
 {
-	ARope::RopeAttachEvent.RemoveAll(this);
-	ARope::RopeDetachEvent.RemoveAll(this);
-	ARope::RopeStateToggleEvent.RemoveAll(this);
+	if (Character)
+		Character->ControlSchemeChangedEvent.RemoveAll(this);
 }
