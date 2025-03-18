@@ -38,6 +38,12 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Physics Setup", meta=(ClampMin = 0))
 	float RopeForce = 30000.0;
+
+	UPROPERTY(EditAnywhere, Category="Physics Setup", meta=(ClampMin = 0))
+	float InitialVelocityMultiplier = 5;
+
+	UPROPERTY(EditAnywhere, Category="Physics Setup", meta=(ClampMin = 0))
+	float LaunchVelocityMultiplier = 5;
 #pragma endregion
 
 #pragma region Visual Setup
@@ -58,6 +64,14 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Visual Setup", meta=(Tooltip="Amount to offset the right hand from the grip bone"))
 	float RightHandGripOffsetAmount = 17.0;
+#pragma endregion
+
+#pragma region Camera Setup
+	UPROPERTY(EditAnywhere, Category = "Camera Setup")
+	FViewTargetTransitionParams TransitionInParams;
+
+	UPROPERTY(EditAnywhere, Category = "Camera Setup")
+	FViewTargetTransitionParams TransitionOutParams;
 #pragma endregion
 
 #pragma region Collision Setup

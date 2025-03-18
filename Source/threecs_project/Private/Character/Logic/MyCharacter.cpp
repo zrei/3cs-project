@@ -16,6 +16,6 @@ AMyCharacter::AMyCharacter()
 
 void AMyCharacter::RotateCamera()
 {
-	FQuat springarmWorldRotation = FQuat::MakeFromRotator(FRotator{ CurrCharacterState.CurrLookPitch, CurrCharacterState.CurrLookYaw, 0 });
+	FQuat springarmWorldRotation = FQuat::MakeFromRotator(CurrCharacterState.CurrCameraRotation);
 	CameraSpringArm->SetWorldRotation(springarmWorldRotation);
 }

@@ -53,19 +53,16 @@ public:
 	ECharacterGait CharacterGait;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float TargetCharacterRotation;
+	FRotator TargetCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float NextTargetCharacterRotation;
+	FRotator NextTargetCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrCharacterRotation;
+	FRotator CurrCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrLookYaw;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrLookPitch;
+	FRotator CurrCameraRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float CurrCharacterSpeed;
@@ -86,14 +83,14 @@ public:
 	ERopeInputState RopeInputState;
 
 	FCharacterState() : MovementInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
-		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookYaw(0), CurrLookPitch(0),
+		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrCameraRotation(0),
 		CurrCharacterSpeed(0), TargetCharacterSpeed(0), LeftHandPosition(), RightHandPosition(), EnableHandIK(false), RopeInputState(ERopeInputState::SWING) { }
 
 	FCharacterState(FVector2D movementInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
-		ECharacterGait characterGait, float targetCharacterRotation, float nextTargetCharacterRotation, float currCharacterRotation, float currLookYaw, float currLookPitch,
+		ECharacterGait characterGait, FRotator targetCharacterRotation, FRotator nextTargetCharacterRotation, FRotator currCharacterRotation, FRotator currCameraRotation,
 		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK, ERopeInputState ropeInputState) : MovementInput(movementInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
 		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
-		CurrCharacterRotation(currCharacterRotation), CurrLookYaw(currLookYaw), CurrLookPitch(currLookPitch), CurrCharacterSpeed(currCharacterSpeed),
+		CurrCharacterRotation(currCharacterRotation), CurrCameraRotation(currCameraRotation), CurrCharacterSpeed(currCharacterSpeed),
 		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK), RopeInputState(ropeInputState) {}
 };
 

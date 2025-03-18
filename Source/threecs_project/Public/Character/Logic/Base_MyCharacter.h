@@ -103,15 +103,30 @@ private:
 
 	bool ShouldDoMontageRotation() const;
 
-	inline void ConvertRotation(float& rotation)
+	/// <summary>
+	/// Returns the shortest angular distance from the currRotation to targetRotation
+	/// </summary>
+	/// <param name="currRotation">Should be between -180 and 180</param>
+	/// <param name="targetRotation">Should be between -180 and 180</param>
+	/// <returns></returns>
+	inline float CalculateShortestRotationDiff(float currRotationYaw, float targetRotationYaw) const
 	{
-		if (rotation >= 0)
+		// convert to 0-360 for easier comparison
+		float convertedCurrYaw = currRotationYaw + 180;
+		float convertedTargetYaw = targetRotationYaw + 180;
+		float diff = convertedTargetYaw - convertedCurrYaw;
+
+		if (diff > 180)
 		{
-			rotation = -(360 - rotation);
+			return -(360 - diff);
+		}
+		else if (diff < -180)
+		{
+			return 360 + diff;
 		}
 		else
 		{
-			rotation = 360 + rotation;
+			return diff;
 		}
 	}
 

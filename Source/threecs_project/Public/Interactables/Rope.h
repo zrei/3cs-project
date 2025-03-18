@@ -89,7 +89,7 @@ private:
 private:
 	void UpdateCameraPositionAndRotation();
 
-	float DefaultLookPitch;
+	FRotator CameraRotation;
 #pragma endregion
 
 #pragma region Collision
@@ -126,9 +126,9 @@ private:
 
 	TObjectPtr<ABase_MyCharacter> AttachedCharacter;
 
-	float TargetCharacterAttachHorizontalAngle;
+	FRotator TargetCharacterAttachRotation;
 
-	float CurrCharacterAttachHorizontalAngle;
+	FRotator CurrCharacterAttachRotation;
 
 	unsigned int AttachedBone;
 
@@ -136,15 +136,12 @@ private:
 
 	FName VisualAttachedBoneName;
 
-	constexpr static float InitialVelocityMultiplier = 5;
-
 #pragma endregion
 
 #pragma region Detach
 private:
 	bool TryDetachCharacter();
 
-	constexpr static float LaunchVelocityMultiplier = 1;
 #pragma endregion
 
 #pragma region Input

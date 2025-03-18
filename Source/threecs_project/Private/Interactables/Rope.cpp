@@ -61,10 +61,11 @@ void ARope::BeginPlay()
 
 	CanSwing = true;
 	IsOccupied = false;
-	DefaultLookPitch = RopeCamera->GetRelativeRotation().Pitch;
 	HorizontalCameraOffset = FMath::Abs(GetActorLocation().Y - RopeCamera->GetComponentLocation().Y);
 	VerticalCameraOffset = RopeCamera->GetComponentLocation().Z - GetActorLocation().Z;
-	CurrCharacterAttachHorizontalAngle = 0;
+	CurrCharacterAttachRotation = FRotator{0};
+	TargetCharacterAttachRotation = FRotator{0};
+	CameraRotation = FRotator{ RopeCamera->GetRelativeRotation().Pitch, CurrCharacterAttachRotation.Yaw, 0};;
 
 	UpdateCameraPositionAndRotation();
 
@@ -104,10 +105,10 @@ void ARope::Tick(float deltaTime)
 				
 		FName visualBoneName = FName(GetBoneName(AttachedBone + RopeSettings->NumberOfBonesToOffsetGrip));
 		
-		FVector inRopeSpaceLeft = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->LeftHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachHorizontalAngle, {0, 0, 1}));
+		FVector inRopeSpaceLeft = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->LeftHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachRotation.Yaw, {0, 0, 1}));
 		FVector leftHandPosition = Rope->GetSocketLocation(visualBoneName) + inRopeSpaceLeft * RopeSettings->LeftHandGripOffsetAmount;
 		
-		FVector inRopeSpaceRight = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->RightHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachHorizontalAngle, { 0, 0, 1 }));
+		FVector inRopeSpaceRight = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->RightHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachRotation.Yaw, { 0, 0, 1 }));
 		FVector rightHandPosition = Rope->GetSocketLocation(visualBoneName) + inRopeSpaceRight * RopeSettings->RightHandGripOffsetAmount;
 
 		AttachedCharacter->UpdateHandPositions(leftHandPosition, rightHandPosition);
@@ -118,10 +119,9 @@ void ARope::Tick(float deltaTime)
 #pragma region Camera
 void ARope::UpdateCameraPositionAndRotation()
 {
-	FVector cameraWorldLocation = GetActorLocation() + (-FVector::ForwardVector * HorizontalCameraOffset).RotateAngleAxis(TargetCharacterAttachHorizontalAngle, FVector::UpVector) + FVector{0, 0, VerticalCameraOffset};
+	FVector cameraWorldLocation = GetActorLocation() + (-FVector::ForwardVector * HorizontalCameraOffset).RotateAngleAxis(CameraRotation.Yaw, FVector::UpVector) + FVector{0, 0, VerticalCameraOffset};
 	RopeCamera->SetWorldLocation(cameraWorldLocation);
-
-	FQuat cameraWorldRotation = FQuat::MakeFromRotator(FRotator{ DefaultLookPitch, TargetCharacterAttachHorizontalAngle, 0 });
+	FQuat cameraWorldRotation = FQuat::MakeFromRotator(CameraRotation);
 	RopeCamera->SetWorldRotation(cameraWorldRotation);
 }
 #pragma endregion
@@ -160,15 +160,16 @@ bool ARope::TryAttachCharacter(ABase_MyCharacter* character, const FName& attach
 	AttachedCharacter = character;
 	AttachedCharacter->AttachToComponent(this->Rope, { EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld, EAttachmentRule::KeepWorld, true }, AttachedBoneName);
 
-	CurrCharacterAttachHorizontalAngle = FMath::ClampAngle(AttachedCharacter->GetCurrentState().CurrCharacterRotation, -180, 179.9);
-	TargetCharacterAttachHorizontalAngle = CurrCharacterAttachHorizontalAngle;
+	CurrCharacterAttachRotation = AttachedCharacter->GetCurrentState().CurrCharacterRotation;
+	TargetCharacterAttachRotation = CurrCharacterAttachRotation;
+	CameraRotation.Yaw = CurrCharacterAttachRotation.Yaw;
 
 	RopeCamera->SetActive(true);
-	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->SetViewTarget(this);
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->SetViewTarget(this, RopeSettings->TransitionInParams);
 
 	DeactivateCollision();
 
-	Rope->SetPhysicsLinearVelocity(currCharacterVelocity * InitialVelocityMultiplier, true, BoneToApplyForce);
+	Rope->SetPhysicsLinearVelocity(currCharacterVelocity * RopeSettings->InitialVelocityMultiplier, true, BoneToApplyForce);
 	return true;
 }
 #pragma endregion
@@ -191,10 +192,10 @@ bool ARope::TryDetachCharacter()
 	FVector currRopeVelocity = Rope->GetPhysicsLinearVelocity(BoneToApplyForce);
 	currRopeVelocity.Z = 0;
 
-	AttachedCharacter->LaunchCharacter(currRopeVelocity * LaunchVelocityMultiplier, true, true);
+	AttachedCharacter->LaunchCharacter(currRopeVelocity * RopeSettings->LaunchVelocityMultiplier, true, true);
 	
 	RopeCamera->SetActive(false);
-	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->SetViewTarget(Cast<AActor>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)));
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->SetViewTarget(Cast<AActor>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)), RopeSettings->TransitionOutParams);
 
 	AttachedCharacter = nullptr;
 	
@@ -229,7 +230,7 @@ void ARope::CheckCharacterInputs(float deltaTime)
 void ARope::OnSwing(FVector2D normalizedMovementInput, float deltaTime) const
 {
 	normalizedMovementInput = FVector2D{ normalizedMovementInput.Y, normalizedMovementInput.X };
-	FVector2D rotatedMovementInput = normalizedMovementInput.GetRotated(CurrCharacterAttachHorizontalAngle);
+	FVector2D rotatedMovementInput = normalizedMovementInput.GetRotated(CurrCharacterAttachRotation.Yaw);
 	Rope->AddForce({ rotatedMovementInput.X * RopeSettings->RopeForce * deltaTime, rotatedMovementInput.Y * RopeSettings->RopeForce * deltaTime, 0 }, BoneToApplyForce);
 }
 #pragma endregion
@@ -237,14 +238,13 @@ void ARope::OnSwing(FVector2D normalizedMovementInput, float deltaTime) const
 #pragma region Shimmy
 void ARope::OnShimmy(FVector2D normalizedMovementInput, float deltaTime)
 {
-	TargetCharacterAttachHorizontalAngle = FMath::ClampAngle(TargetCharacterAttachHorizontalAngle - normalizedMovementInput.X * RopeMovementSettings->CameraHorizontalSpeed * deltaTime, -180, 179.9);
+	CameraRotation.Yaw = FMath::ClampAngle(CameraRotation.Yaw - normalizedMovementInput.X * RopeMovementSettings->CameraHorizontalSpeed * deltaTime, -180, 179.9);
+	TargetCharacterAttachRotation = FRotator{0, CameraRotation.Yaw, 0};
 }
 
 void ARope::AdjustHorizontalPosition(float deltaTime)
 {
-	FRotator currRotation{0, 0, CurrCharacterAttachHorizontalAngle};
-	FRotator targetRotation{0, 0, TargetCharacterAttachHorizontalAngle};
-	CurrCharacterAttachHorizontalAngle = FMath::ClampAngle(UKismetMathLibrary::RInterpTo(currRotation, targetRotation, deltaTime, RopeMovementSettings->CharacterHorizontalShimmySpeed).Roll, -180, 179.9);
+	CurrCharacterAttachRotation = UKismetMathLibrary::RInterpTo(CurrCharacterAttachRotation, TargetCharacterAttachRotation, deltaTime, RopeMovementSettings->CharacterHorizontalShimmySpeed);
 
 	FRotator visualBoneRotation{Rope->GetSocketRotation(VisualAttachedBoneName)};
 	FVector boneUpVector = FRotationMatrix(visualBoneRotation).GetScaledAxis(EAxis::Y);
@@ -252,7 +252,7 @@ void ARope::AdjustHorizontalPosition(float deltaTime)
 
 	FVector attachedBoneLocation = Rope->GetSocketLocation(AttachedBoneName);
 	FVector visualBoneLocation = Rope->GetSocketLocation(VisualAttachedBoneName);
-	FVector characterOffsetDirection = boneForwardVector.RotateAngleAxis(CurrCharacterAttachHorizontalAngle, boneUpVector);
+	FVector characterOffsetDirection = boneForwardVector.RotateAngleAxis(CurrCharacterAttachRotation.Yaw, boneUpVector);
 	AttachedCharacter->SetActorLocation(attachedBoneLocation + characterOffsetDirection * RopeSettings->CharacterOffset);
 
 	AttachedCharacter->SetActorRotation(UKismetMathLibrary::FindLookAtRotation(AttachedCharacter->GetActorLocation(), attachedBoneLocation));
