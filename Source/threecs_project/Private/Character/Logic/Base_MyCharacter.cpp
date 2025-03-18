@@ -251,7 +251,7 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 		CurrCharacterState.NextTargetCharacterRotation = {0, CurrCharacterState.CurrCameraRotation.Yaw, 0};
 	}
 
-	float diff = CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.NextTargetCharacterRotation.Yaw);
+	float diff = ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.NextTargetCharacterRotation.Yaw);
 
 	if (diff > 0)
 	{
@@ -274,7 +274,7 @@ void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 
 bool ABase_MyCharacter::ShouldDoMontageRotation() const
 {
-	return FMath::Abs(CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) >= GetMovementSettings().RotationAngleThreshold;
+	return FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) >= GetMovementSettings().RotationAngleThreshold;
 }
 
 bool ABase_MyCharacter::ShouldRotateInPlace() const
@@ -289,7 +289,7 @@ bool ABase_MyCharacter::ShouldDoMovingRotation() const
 
 void ABase_MyCharacter::SetTurnAnimationAsset()
 {
-	bool shouldDoBigRotation = FMath::Abs(CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) > 90;
+	bool shouldDoBigRotation = FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) > 90;
 	if (CurrCharacterState.CurrRotationDirection == ERotateDirection::RIGHT && shouldDoBigRotation)
 	{
 		CurrPlayingTurnSequence = NormalTurnAnimationSettings->TurnRightMoreThan180Asset;
@@ -314,7 +314,7 @@ void ABase_MyCharacter::SetTurnAnimationAsset()
 
 void ABase_MyCharacter::SetRotationCurveScaleValue()
 {
-	float diff = FMath::Abs(CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw));
+	float diff = FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw));
 	if (diff <= 90)
 	{
 		RotationCurveScaleValue = diff / ABase_MyCharacter::NinetyDegreeRotationCurveAmount;
@@ -471,9 +471,6 @@ bool ABase_MyCharacter::ExitSwingState()
 }
 #pragma endregion
 
-// bugs: long turnaround
-// bugs: does not turn upon first starting motion
-// bugs: does not do in place turn after finishing motion
 void ABase_MyCharacter::Tick(float deltaTime)
 {
 	if (HasCameraInput)

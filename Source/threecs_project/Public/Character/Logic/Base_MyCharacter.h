@@ -103,13 +103,28 @@ private:
 
 	bool ShouldDoMontageRotation() const;
 
+	static constexpr float NinetyDegreeRotationCurveAmount = 90;
+
+	static constexpr float OneHundredEightyDegreeRotationCurveAmount = 180;
+
+	static constexpr float TurnAnimationTargetFrameRate = 30;
+
+	static constexpr float MovingTurnStartTime = 0.33;
+
+	float RotationCountdownTimer;
+
+	float RotationCurveScaleValue;
+
+	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
+
+public:
 	/// <summary>
 	/// Returns the shortest angular distance from the currRotation to targetRotation
 	/// </summary>
 	/// <param name="currRotation">Should be between -180 and 180</param>
 	/// <param name="targetRotation">Should be between -180 and 180</param>
 	/// <returns></returns>
-	inline float CalculateShortestRotationDiff(float currRotationYaw, float targetRotationYaw) const
+	static inline float CalculateShortestRotationDiff(float currRotationYaw, float targetRotationYaw)
 	{
 		// convert to 0-360 for easier comparison
 		float convertedCurrYaw = currRotationYaw + 180;
@@ -129,20 +144,6 @@ private:
 			return diff;
 		}
 	}
-
-	static constexpr float NinetyDegreeRotationCurveAmount = 90;
-
-	static constexpr float OneHundredEightyDegreeRotationCurveAmount = 180;
-
-	static constexpr float TurnAnimationTargetFrameRate = 30;
-
-	static constexpr float MovingTurnStartTime = 0.33;
-
-	float RotationCountdownTimer;
-
-	float RotationCurveScaleValue;
-
-	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
 #pragma endregion
 
 #pragma region Gait

@@ -100,8 +100,8 @@ void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 	}
 	
 	bool isTurning = CharacterRef->GetCurrentState().CurrRotationDirection != ERotateDirection::NONE;
-	float diff = CharacterRef->GetCurrentState().TargetCharacterRotation.Yaw - CharacterRef->GetCurrentState().CurrCharacterRotation.Yaw;
-	float targetLookYaw = (FMath::Clamp(diff/90, -1, 1) + 1) / 2;
+	float diff = -ABase_MyCharacter::CalculateShortestRotationDiff(CharacterRef->GetCurrentState().TargetCharacterRotation.Yaw, CharacterRef->GetCurrentState().CurrCharacterRotation.Yaw);
+	float targetLookYaw = (FMath::Clamp(diff / 90, -1, 1) + 1) / 2;
 	LookYaw = FMath::FInterpTo(LookYaw, targetLookYaw, deltaTime, isTurning ? LookSettings->RotatingLookYawInterpolationSpeed : LookSettings->LookYawInterpolationSpeed);
 	float targetLookPitch = FMath::Clamp(CharacterRef->GetCurrentState().CurrCameraRotation.Pitch, -90, 90);
 	LookPitch = FMath::FInterpTo(LookPitch, targetLookPitch, deltaTime, LookSettings->LookPitchInterpolationSpeed);
