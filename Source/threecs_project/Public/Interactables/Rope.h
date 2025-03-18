@@ -144,7 +144,7 @@ private:
 private:
 	bool TryDetachCharacter();
 
-	constexpr static float LaunchVelocityMultiplier = 5;
+	constexpr static float LaunchVelocityMultiplier = 1;
 #pragma endregion
 
 #pragma region Input

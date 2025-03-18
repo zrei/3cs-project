@@ -33,7 +33,6 @@ private:
 
 	bool IsRunningInGame = false;
 
-	
 #pragma region Locomotion Settings
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Settings|Locomotion Settings")
@@ -194,6 +193,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category="Hand IK")
 	float RightHandIKAlpha;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Hand IK Settings", meta=(Tooltip="In component space"))
+	FVector LeftForearmOffset{19.741, -4.578, -17.805};
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Hand IK Settings", meta=(Tooltip="In component space"))
+	FVector RightForearmOffset{-15.899, -5.161, -21.172 };
 
 private:
 	void UpdateHandIK();

@@ -242,9 +242,19 @@ void ARope::OnShimmy(FVector2D normalizedMovementInput, float deltaTime)
 
 void ARope::AdjustHorizontalPosition(float deltaTime)
 {
+/*
+	When calculating which direction to turn :
+	Convert both current and target back to 0 - 360
+		Take the target rotation - current rotation
+		If diff > 180, then do clockwise(turn right)
+		If diff < -180, then do counter - clockwise(turn left)
+		Otherwise, if > 0, do counter - clockwise(turn left)
+		If < 0, do clockwise(turn right)
+	*/
 	FRotator currRotation{0, 0, CurrCharacterAttachHorizontalAngle};
 	FRotator targetRotation{0, 0, TargetCharacterAttachHorizontalAngle};
 	CurrCharacterAttachHorizontalAngle = FMath::ClampAngle(UKismetMathLibrary::RInterpTo(currRotation, targetRotation, deltaTime, RopeMovementSettings->CharacterHorizontalShimmySpeed).Roll, -180, 179.9);
+	//CurrCharacterAttachHorizontalAngle = FMath::FInterpTo(CurrCharacterAttachHorizontalAngle, TargetCharacterAttachHorizontalAngle, deltaTime, RopeMovementSettings->CharacterHorizontalShimmySpeed);
 
 	FRotator visualBoneRotation{Rope->GetSocketRotation(VisualAttachedBoneName)};
 	FVector boneUpVector = FRotationMatrix(visualBoneRotation).GetScaledAxis(EAxis::Y);

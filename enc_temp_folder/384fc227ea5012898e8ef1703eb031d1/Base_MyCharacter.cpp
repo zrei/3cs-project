@@ -520,8 +520,10 @@ void ABase_MyCharacter::Tick(float deltaTime)
 			CurrCharacterState.CurrRotationDirection = CurrCharacterState.NextRotationDirection;
 			if (ShouldDoMovingRotation())
 			{
+				UE_LOG(LogTemp, Warning, TEXT("Should do moving rotation"));
 				if (ShouldDoMontageRotation())
 				{
+					UE_LOG(LogTemp, Warning, TEXT("Montage"));
 					PlayTurningMontage();
 				}
 				else

@@ -94,14 +94,15 @@ void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 {
 	if (IsSwinging)
 	{
-		LookYaw = FMath::FInterpTo(LookYaw, 0.5, deltaTime, LookSettings->LookYawInterpolationSpeed);
+		LookYaw = FMath::FInterpTo(LookYaw, 0.5, deltaTime, LookSettings->RotatingLookYawInterpolationSpeed);
 		LookPitch = FMath::FInterpTo(LookPitch, 0, deltaTime, LookSettings->LookPitchInterpolationSpeed);
 		return;
 	}
 	
+	bool isTurning = CharacterRef->GetCurrentState().CurrRotationDirection != ERotateDirection::NONE;
 	float diff = CharacterRef->GetCurrentState().TargetCharacterRotation - CharacterRef->GetCurrentState().CurrCharacterRotation;
 	float targetLookYaw = (FMath::Clamp(diff/90, -1, 1) + 1) / 2;
-	LookYaw = FMath::FInterpTo(LookYaw, targetLookYaw, deltaTime, LookSettings->LookYawInterpolationSpeed);
+	LookYaw = FMath::FInterpTo(LookYaw, targetLookYaw, deltaTime, isTurning ? LookSettings->RotatingLookYawInterpolationSpeed : LookSettings->LookYawInterpolationSpeed);
 	float targetLookPitch = FMath::Clamp(CharacterRef->GetCurrentState().CurrLookPitch, -90, 90);
 	LookPitch = FMath::FInterpTo(LookPitch, targetLookPitch, deltaTime, LookSettings->LookPitchInterpolationSpeed);
 }
@@ -260,10 +261,9 @@ void UCharacterAnimationInstance::UpdateThighRotation(float deltaTime)
 
 void UCharacterAnimationInstance::UpdateHandIK()
 {
+	//CharacterRef->GetMesh()->ComponentSpace
 	LeftHandIKAlpha = CharacterRef->GetCurrentState().EnableHandIK ? 1.0f : 0.0f;
 	RightHandIKAlpha = CharacterRef->GetCurrentState().EnableHandIK ? 1.0f : 0.0f;
-	//UE_LOG(LogTemp, Warning, TEXT("Left hand: %f"), LeftHandIKAlpha);
 	LeftHandPosition = CharacterRef->GetCurrentState().LeftHandPosition;
-	//UE_LOG(LogTemp, Warning, TEXT("Left hand position: (%f, %f, %f)"), LeftHandPosition.X, LeftHandPosition.Y, LeftHandPosition.Z);
 	RightHandPosition = CharacterRef->GetCurrentState().RightHandPosition;
 }

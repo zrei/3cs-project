@@ -20,4 +20,7 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Look")
 	float LookYawInterpolationSpeed;
+
+	UPROPERTY(EditAnywhere, Category="Look")
+	float RotatingLookYawInterpolationSpeed;
 };
