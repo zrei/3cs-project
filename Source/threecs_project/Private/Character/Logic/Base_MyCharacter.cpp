@@ -241,7 +241,7 @@ void ABase_MyCharacter::OnGaitChangeTriggered(const FInputActionInstance& _)
 #pragma region Rotation
 void ABase_MyCharacter::SetTargetCharacterRotation()
 {
-	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING)
+	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING || CurrCharacterState.CharacterMovementState == ECharacterMovementState::JUMPING)
 	{
 		float rotationFromMovementInput = GetMovementRotation();
 		CurrCharacterState.NextTargetCharacterRotation = {0, FMath::ClampAngle(CurrCharacterState.CurrCameraRotation.Yaw + rotationFromMovementInput, -180, 179.9), 0};
@@ -252,7 +252,6 @@ void ABase_MyCharacter::SetTargetCharacterRotation()
 	}
 
 	float diff = ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.NextTargetCharacterRotation.Yaw);
-
 	if (diff > 0)
 	{
 		CurrCharacterState.NextRotationDirection = ERotateDirection::LEFT;
@@ -274,7 +273,7 @@ void ABase_MyCharacter::UpdateCharacterMovingRotation(float deltaTime)
 
 bool ABase_MyCharacter::ShouldDoMontageRotation() const
 {
-	return FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) >= GetMovementSettings().RotationAngleThreshold;
+	return FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) >= GetMovementSettings().MontageRotationAngleThreshold;
 }
 
 bool ABase_MyCharacter::ShouldRotateInPlace() const
@@ -284,7 +283,7 @@ bool ABase_MyCharacter::ShouldRotateInPlace() const
 
 bool ABase_MyCharacter::ShouldDoMovingRotation() const
 {
-	return !IsPlayingTurningMontage() && CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING && CurrCharacterState.TargetCharacterRotation.Yaw != CurrCharacterState.CurrCharacterRotation.Yaw;
+	return !IsPlayingTurningMontage() && CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING && FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw)) >= GetMovementSettings().MovingRotationAngleThreshold;
 }
 
 void ABase_MyCharacter::SetTurnAnimationAsset()
@@ -317,11 +316,11 @@ void ABase_MyCharacter::SetRotationCurveScaleValue()
 	float diff = FMath::Abs(ABase_MyCharacter::CalculateShortestRotationDiff(CurrCharacterState.CurrCharacterRotation.Yaw, CurrCharacterState.TargetCharacterRotation.Yaw));
 	if (diff <= 90)
 	{
-		RotationCurveScaleValue = diff / ABase_MyCharacter::NinetyDegreeRotationCurveAmount;
+		RotationCurveScaleValue = diff / ABase_MyCharacter::NinetyDegreeRotationCurveAmount * 1.1;
 	}
 	else
 	{
-		RotationCurveScaleValue = diff / ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount;
+		RotationCurveScaleValue = diff / ABase_MyCharacter::OneHundredEightyDegreeRotationCurveAmount * 1.1;
 	}
 }
 
@@ -333,7 +332,7 @@ void ABase_MyCharacter::PlayTurningMontage()
 	// scale play rate if moving to match movement speed
 	if (CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING)
 	{
-		playRate = FMath::Max(CurrCharacterState.CurrCharacterSpeed, GetMovementSettings().MinimumTurnMontageSpeed) * GetMovementSettings().MovingRotationSpeedPlayRateScale;
+		playRate = FMath::Clamp(CurrCharacterState.CurrCharacterSpeed, GetMovementSettings().MinimumTurnMontageSpeed, GetMovementSettings().MaximumTurnMontageSpeed) * GetMovementSettings().MovingRotationSpeedPlayRateScale;
 	}
 	RotationCurveScaleValue *= playRate;
 	MainAnimInstance->PlaySlotAnimationAsDynamicMontage(CurrPlayingTurnSequence, NormalTurnAnimationSettings->LegsSlotName, 0, 0, playRate, 1, -1, CurrCharacterState.CharacterMovementState == ECharacterMovementState::MOVING ? MovingTurnStartTime : 0);
@@ -357,7 +356,7 @@ void ABase_MyCharacter::UpdateCharacterRotationThroughCurve(float deltaTime)
 			if ((uncappedHorizontalAngle > 0 && CurrCharacterState.TargetCharacterRotation.Yaw < 0) || (uncappedHorizontalAngle < 0 && CurrCharacterState.TargetCharacterRotation.Yaw > 0))
 			{
 				CurrCharacterState.CurrCharacterRotation = { 0, uncappedHorizontalAngle, 0 };
-			}
+		}
 			else
 			{
 				CurrCharacterState.CurrCharacterRotation = { 0, FMath::Max(uncappedHorizontalAngle, CurrCharacterState.TargetCharacterRotation.Yaw), 0 };
@@ -373,7 +372,7 @@ void ABase_MyCharacter::UpdateCharacterRotationThroughCurve(float deltaTime)
 			else
 			{
 				CurrCharacterState.CurrCharacterRotation = { 0, FMath::Min(uncappedHorizontalAngle, CurrCharacterState.TargetCharacterRotation.Yaw), 0 };
-			}			
+			}
 		}
 	}
 }

@@ -49,7 +49,7 @@ void ARope::OnConstruction(const FTransform& Transform)
 			sphereCollision->SetupAttachment(Rope, FName(GetBoneName(boneNumber + 1)));
 			sphereCollision->InitSphereRadius(RopeSettings->SphereColliderRadius);
 			sphereCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-			sphereCollision->bHiddenInGame = false;
+			sphereCollision->bHiddenInGame = true;
 		}
 	}
 }
@@ -105,11 +105,9 @@ void ARope::Tick(float deltaTime)
 				
 		FName visualBoneName = FName(GetBoneName(AttachedBone + RopeSettings->NumberOfBonesToOffsetGrip));
 		
-		FVector inRopeSpaceLeft = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->LeftHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachRotation.Yaw, {0, 0, 1}));
-		FVector leftHandPosition = Rope->GetSocketLocation(visualBoneName) + inRopeSpaceLeft * RopeSettings->LeftHandGripOffsetAmount;
+		FVector leftHandPosition = Rope->GetSocketLocation(visualBoneName);
 		
-		FVector inRopeSpaceRight = FRotationMatrix(Rope->GetSocketRotation(visualBoneName)).TransformVector(RopeSettings->RightHandGripOffsetDirection.RotateAngleAxis(CurrCharacterAttachRotation.Yaw, { 0, 0, 1 }));
-		FVector rightHandPosition = Rope->GetSocketLocation(visualBoneName) + inRopeSpaceRight * RopeSettings->RightHandGripOffsetAmount;
+		FVector rightHandPosition = Rope->GetSocketLocation(visualBoneName);
 
 		AttachedCharacter->UpdateHandPositions(leftHandPosition, rightHandPosition);
 	}

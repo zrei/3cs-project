@@ -119,7 +119,10 @@ public:
 	float CharacterMovingRotationalSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RotationAngleThreshold;
+	float MontageRotationAngleThreshold = 45;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MovingRotationAngleThreshold = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RotationLookTimeThreshold;
@@ -130,16 +133,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MinimumTurnMontageSpeed = 1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaximumTurnMontageSpeed = 1;
+
 	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0), CharacterDecceleration(0),
-		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), RotationAngleThreshold(0), RotationLookTimeThreshold(0),
-		MovingRotationSpeedPlayRateScale(0), MinimumTurnMontageSpeed(0) {}
+		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MontageRotationAngleThreshold(0), MovingRotationAngleThreshold(0), RotationLookTimeThreshold(0),
+		MovingRotationSpeedPlayRateScale(0), MinimumTurnMontageSpeed(0), MaximumTurnMontageSpeed(0) {}
 
 	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterAcceleration, float characterDecceleration,
-		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float rotationAngleThreshold, float rotationLookTimeThreshold,
-		float movingRotationSpeedPlayRateScale, float minimumTurnMontageSpeed) : CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
+		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float montageRotationAngleThreshold, float movingRotationAngleThreshold, float rotationLookTimeThreshold,
+		float movingRotationSpeedPlayRateScale, float minimumTurnMontageSpeed, float maximumTurnMontageSpeed) : CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
 		CharacterAcceleration(characterAcceleration), CharacterDecceleration(characterDecceleration), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
-		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), RotationAngleThreshold(rotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold),
-		MovingRotationSpeedPlayRateScale(movingRotationSpeedPlayRateScale), MinimumTurnMontageSpeed(minimumTurnMontageSpeed) {}
+		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MontageRotationAngleThreshold(montageRotationAngleThreshold), MovingRotationAngleThreshold(movingRotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold),
+		MovingRotationSpeedPlayRateScale(movingRotationSpeedPlayRateScale), MinimumTurnMontageSpeed(minimumTurnMontageSpeed), MaximumTurnMontageSpeed(maximumTurnMontageSpeed) {}
 };
 
 USTRUCT(BlueprintType)
