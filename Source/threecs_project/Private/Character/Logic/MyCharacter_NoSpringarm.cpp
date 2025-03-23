@@ -15,9 +15,9 @@ AMyCharacter_NoSpringarm::AMyCharacter_NoSpringarm()
 void AMyCharacter_NoSpringarm::RotateCamera()
 {
 	// TODO: Perform only a single rotation?
-	FVector cameraWorldLocation = CameraParent->GetComponentLocation() + CameraLocationOffset.RotateAngleAxis(-CurrViewVerticalAngle, FVector::RightVector).RotateAngleAxis(CurrViewHorizontalAngle, FVector::UpVector);
+	FVector cameraWorldLocation = CameraParent->GetComponentLocation() + CameraLocationOffset.RotateAngleAxis(-CurrCharacterState.CurrCameraRotation.Pitch, FVector::RightVector).RotateAngleAxis(CurrCharacterState.CurrCameraRotation.Yaw, FVector::UpVector);
 	Camera->SetWorldLocation(cameraWorldLocation);
 
-	FQuat cameraWorldRotation = FQuat::MakeFromRotator(FRotator{ CurrViewVerticalAngle, CurrViewHorizontalAngle, 0 });
+	FQuat cameraWorldRotation = FQuat::MakeFromRotator(CurrCharacterState.CurrCameraRotation);
 	Camera->SetWorldRotation(cameraWorldRotation);
 }

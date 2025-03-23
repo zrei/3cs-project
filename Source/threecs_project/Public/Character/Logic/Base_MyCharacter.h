@@ -5,12 +5,19 @@
 class UCameraComponent;
 class USceneComponent;
 struct FInputActionInstance;
+class UCharacterTurnAnimationSettings;
+class UCharacterLocomotionSettings;
+class UCharacterCameraSettings;
+class AMyPlayerController;
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
 #include "Character/Logic/CharacterState.h"
+#include "UI/ControlScheme.h"
 #include "Base_MyCharacter.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FControlSchemeDelegate, EControlScheme);
 
 /*
 View direction is calculated and stored whenever the camera is adjusted.
@@ -40,15 +47,10 @@ protected:
 
 	virtual void Tick(float deltaTime) override;
 
-#pragma region State
-private:
-	ECharacterGait CurrCharacterGait;
+#pragma region Locomotion
+	void SubscribeToLocomotionInputs(AMyPlayerController* const playerController);
 
-	ECharacterMovementState CurrCharacterMovementState;
-
-	ERotateDirection CurrRotationDirection;
-
-	ERotateDirection NextRotationDirection;
+	void UnsubscribeToLocomotionInputs(AMyPlayerController* const playerController);
 #pragma endregion
 
 #pragma region Character Movement
@@ -71,30 +73,12 @@ private:
 	float GetMovementRotation() const;
 
 	void OnCharacterJump(const FInputActionInstance& inputActionInstance);
-
-	float CurrCharacterMovementSpeed;
-
-	float TargetCharacterMovementSpeed;
-
-	FVector2D MovementInput;
 #pragma endregion
 
 #pragma region Rotation
 protected:
 	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnLeftLessThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnRightLessThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnLeftMoreThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	TObjectPtr<UAnimSequenceBase> TurnRightMoreThan180Asset;
-
-	UPROPERTY(EditAnywhere, Category = "RotationAnimation")
-	FName LegsSlotName;
+	TObjectPtr<UCharacterTurnAnimationSettings> NormalTurnAnimationSettings;
 
 private:
 	bool ShouldRotateInPlace() const;
@@ -119,35 +103,47 @@ private:
 
 	bool ShouldDoMontageRotation() const;
 
-	inline void ConvertRotation(float& rotation)
-	{
-		if (rotation >= 0)
-		{
-			rotation = -(360 - rotation);
-		}
-		else
-		{
-			rotation = 360 + rotation;
-		}
-	}
-
 	static constexpr float NinetyDegreeRotationCurveAmount = 90;
 
 	static constexpr float OneHundredEightyDegreeRotationCurveAmount = 180;
 
 	static constexpr float TurnAnimationTargetFrameRate = 30;
 
+	static constexpr float MovingTurnStartTime = 0.33;
+
 	float RotationCountdownTimer;
-
-	float CurrCharacterHorizontalAngle;
-
-	float CurrTargetCharacterHorizontalAngle;
-
-	float NextTargetCharacterHorizontalAngle;
 
 	float RotationCurveScaleValue;
 
 	TObjectPtr<UAnimSequenceBase> CurrPlayingTurnSequence;
+
+public:
+	/// <summary>
+	/// Returns the shortest angular distance from the currRotation to targetRotation
+	/// </summary>
+	/// <param name="currRotation">Should be between -180 and 180</param>
+	/// <param name="targetRotation">Should be between -180 and 180</param>
+	/// <returns></returns>
+	static inline float CalculateShortestRotationDiff(float currRotationYaw, float targetRotationYaw)
+	{
+		// convert to 0-360 for easier comparison
+		float convertedCurrYaw = currRotationYaw + 180;
+		float convertedTargetYaw = targetRotationYaw + 180;
+		float diff = convertedTargetYaw - convertedCurrYaw;
+
+		if (diff > 180)
+		{
+			return -(360 - diff);
+		}
+		else if (diff < -180)
+		{
+			return 360 + diff;
+		}
+		else
+		{
+			return diff;
+		}
+	}
 #pragma endregion
 
 #pragma region Gait
@@ -158,7 +154,7 @@ private:
 #pragma region Camera
 protected:
 	UPROPERTY(EditAnywhere, Category = "Camera")
-	FCameraSettings CameraSettings;
+	TObjectPtr<UCharacterCameraSettings> CharacterCameraSettings;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
@@ -170,9 +166,8 @@ protected:
 
 	virtual void OnCameraMovementTriggered(const FInputActionInstance& inputActionInstance);
 
-	float CurrViewVerticalAngle;
-
-	float CurrViewHorizontalAngle;
+public:
+	const FCameraSettings& GetCameraSettings() const;
 
 private:
 	void OnCameraMovementStarted(const FInputActionInstance& inputActionInstance);
@@ -189,20 +184,35 @@ private:
 #pragma region Movement and Rotation Info
 protected:
 	UPROPERTY(EditAnywhere, Category = "Movement")
-	FCharacterMovementSettings MovementSettings;
+	TObjectPtr<UCharacterLocomotionSettings> CharacterLocomotionSettings;
 
 public:
-	FCharacterMovementSettings GetMovementSettings() const;
+	const FCharacterMovementSettings& GetMovementSettings() const;
 
-	FCharacterState GetCurrentState() const;
+	const FCharacterState& GetCurrentState() const;
+
+protected:
+	FCharacterState CurrCharacterState;
 #pragma endregion
 
 #pragma region Skeleton and Animation
-protected:
-	UPROPERTY(EditAnywhere, Category = "Animation")
-	FName RotationCurveName;
-
 private:
 	TObjectPtr<UAnimInstance> MainAnimInstance;
 #pragma endregion
+
+#pragma region Rope swing
+public:
+	/// <summary>
+	/// Returns if the character can enter swing state
+	/// </summary>
+	/// <returns></returns>
+	bool EnterSwingState();
+
+	bool ExitSwingState();
+
+	void UpdateHandPositions(FVector left, FVector right);
+#pragma endregion
+
+public:
+	FControlSchemeDelegate ControlSchemeChangedEvent;
 };

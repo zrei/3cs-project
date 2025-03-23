@@ -2,6 +2,8 @@
 
 #pragma once
 
+class ARope;
+
 #include "CoreMinimal.h"
 #include "Camera/PlayerCameraManager.h"
 #include "MyPlayerCameraManager.generated.h"
@@ -13,5 +15,4 @@ UCLASS()
 class THREECS_PROJECT_API AMyPlayerCameraManager : public APlayerCameraManager
 {
 	GENERATED_BODY()
-
 };

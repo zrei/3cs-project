@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interactables/RopeState.h"
 #include "CharacterState.generated.h"
 
 UENUM(BlueprintType)
@@ -10,7 +11,9 @@ enum class ECharacterMovementState : uint8
 {
 	IDLE UMETA(DisplayName = "Idle"),
 	MOVING UMETA(DisplayName = "Moving"),
-	JUMPING UMETA(DisplayName = "Jumping")
+	JUMPING UMETA(DisplayName = "Jumping"),
+	SWINGING UMETA(DisplayName = "Swinging"),
+	EXIT_SWINGING UMETA(DisplayName = "ExitSwinging")
 };
 
 UENUM(BlueprintType)
@@ -35,22 +38,31 @@ struct FCharacterState
 
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector2D MovementInput;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterMovementState CharacterMovementState;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ERotateDirection RotationDirection;
+	ERotateDirection CurrRotationDirection;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	ERotateDirection NextRotationDirection;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	ECharacterGait CharacterGait;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float TargetCharacterRotation;
+	FRotator TargetCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrCharacterRotation;
+	FRotator NextTargetCharacterRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float CurrLookPitch;
+	FRotator CurrCharacterRotation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FRotator CurrCameraRotation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float CurrCharacterSpeed;
@@ -58,15 +70,28 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float TargetCharacterSpeed;
 
-	FCharacterState() : CharacterMovementState(ECharacterMovementState::IDLE), RotationDirection(ERotateDirection::NONE),
-		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), CurrCharacterRotation(0), CurrLookPitch(0), CurrCharacterSpeed(0),
-		TargetCharacterSpeed(0) {}
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector LeftHandPosition;
 
-	FCharacterState(ECharacterMovementState characterMovementState, ERotateDirection rotateDirection,
-		ECharacterGait characterGait, float targetCharacterRotation, float currCharacterRotation, float currLookPitch, float currCharacterSpeed,
-		float targetCharacterSpeed) : CharacterMovementState(characterMovementState), RotationDirection(rotateDirection),
-		CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), CurrCharacterRotation(currCharacterRotation), CurrLookPitch(currLookPitch),
-		CurrCharacterSpeed(currCharacterSpeed), TargetCharacterSpeed(targetCharacterSpeed) {}
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FVector RightHandPosition;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool EnableHandIK;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	ERopeInputState RopeInputState;
+
+	FCharacterState() : MovementInput(0, 0), CharacterMovementState(ECharacterMovementState::IDLE), CurrRotationDirection(ERotateDirection::NONE), NextRotationDirection(ERotateDirection::NONE),
+		CharacterGait(ECharacterGait::WALK), TargetCharacterRotation(0), NextTargetCharacterRotation(0), CurrCharacterRotation(0), CurrCameraRotation(0),
+		CurrCharacterSpeed(0), TargetCharacterSpeed(0), LeftHandPosition(), RightHandPosition(), EnableHandIK(false), RopeInputState(ERopeInputState::SWING) { }
+
+	FCharacterState(FVector2D movementInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
+		ECharacterGait characterGait, FRotator targetCharacterRotation, FRotator nextTargetCharacterRotation, FRotator currCharacterRotation, FRotator currCameraRotation,
+		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK, ERopeInputState ropeInputState) : MovementInput(movementInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
+		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
+		CurrCharacterRotation(currCharacterRotation), CurrCameraRotation(currCameraRotation), CurrCharacterSpeed(currCharacterSpeed),
+		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK), RopeInputState(ropeInputState) {}
 };
 
 USTRUCT(BlueprintType)
@@ -94,22 +119,33 @@ public:
 	float CharacterMovingRotationalSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float MovingRotationTime;
+	float MontageRotationAngleThreshold = 45;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RotationAngleThreshold;
+	float MovingRotationAngleThreshold = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float RotationLookTimeThreshold;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MovingRotationSpeedPlayRateScale = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MinimumTurnMontageSpeed = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaximumTurnMontageSpeed = 1;
+
 	FCharacterMovementSettings() : CharacterWalkMovementSpeed(0), CharacterRunMovementSpeed(0), CharacterAcceleration(0), CharacterDecceleration(0),
-		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MovingRotationTime(0), RotationAngleThreshold(0), RotationLookTimeThreshold(0) {}
+		CharacterStationaryRotationalSpeed(0), CharacterMovingRotationalSpeed(0), MontageRotationAngleThreshold(0), MovingRotationAngleThreshold(0), RotationLookTimeThreshold(0),
+		MovingRotationSpeedPlayRateScale(0), MinimumTurnMontageSpeed(0), MaximumTurnMontageSpeed(0) {}
 
 	FCharacterMovementSettings(float characterWalkMovementSpeed, float characterRunMovementSpeed, float characterAcceleration, float characterDecceleration,
-		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float movingRotationTime, float rotationAngleThreshold, float rotationLookTimeThreshold)
-		: CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
+		float characterStationaryRotationalSpeed, float characterMovingRotationalSpeed, float montageRotationAngleThreshold, float movingRotationAngleThreshold, float rotationLookTimeThreshold,
+		float movingRotationSpeedPlayRateScale, float minimumTurnMontageSpeed, float maximumTurnMontageSpeed) : CharacterWalkMovementSpeed(characterWalkMovementSpeed), CharacterRunMovementSpeed(characterRunMovementSpeed),
 		CharacterAcceleration(characterAcceleration), CharacterDecceleration(characterDecceleration), CharacterStationaryRotationalSpeed(characterStationaryRotationalSpeed),
-		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MovingRotationTime(movingRotationTime), RotationAngleThreshold(rotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold) {}
+		CharacterMovingRotationalSpeed(characterMovingRotationalSpeed), MontageRotationAngleThreshold(montageRotationAngleThreshold), MovingRotationAngleThreshold(movingRotationAngleThreshold), RotationLookTimeThreshold(rotationLookTimeThreshold),
+		MovingRotationSpeedPlayRateScale(movingRotationSpeedPlayRateScale), MinimumTurnMontageSpeed(minimumTurnMontageSpeed), MaximumTurnMontageSpeed(maximumTurnMontageSpeed) {}
 };
 
 USTRUCT(BlueprintType)
