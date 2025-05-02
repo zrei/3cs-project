@@ -92,8 +92,9 @@ void UCharacterAnimationInstance::ResetJumpState()
 #pragma region Look
 void UCharacterAnimationInstance::UpdateLookState(float deltaTime)
 {
-	if (IsSwinging)
+	if (IsSwinging || (CharacterRef->GetCurrentState().CurrCharacterSpeed > 0 && (CharacterRef->GetCurrentState().CharacterMovementState == ECharacterMovementState::IDLE || CharacterRef->GetCurrentState().CharacterMovementState == ECharacterMovementState::JUMPING)))
 	{
+		// update to look forward when decelerating or when jumping with no movement input
 		LookYaw = FMath::FInterpTo(LookYaw, 0.5, deltaTime, LookSettings->RotatingLookYawInterpolationSpeed);
 		LookPitch = FMath::FInterpTo(LookPitch, 0, deltaTime, LookSettings->LookPitchInterpolationSpeed);
 		return;

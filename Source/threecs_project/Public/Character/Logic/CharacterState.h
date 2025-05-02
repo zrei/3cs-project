@@ -88,10 +88,10 @@ public:
 
 	FCharacterState(FVector2D movementInput, ECharacterMovementState characterMovementState, ERotateDirection currRotateDirection, ERotateDirection nextRotateDirection,
 		ECharacterGait characterGait, FRotator targetCharacterRotation, FRotator nextTargetCharacterRotation, FRotator currCharacterRotation, FRotator currCameraRotation,
-		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK, ERopeInputState ropeInputState) : MovementInput(movementInput), CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection),
-		NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation),
-		CurrCharacterRotation(currCharacterRotation), CurrCameraRotation(currCameraRotation), CurrCharacterSpeed(currCharacterSpeed),
-		TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK), RopeInputState(ropeInputState) {}
+		float currCharacterSpeed, float targetCharacterSpeed, FVector leftHandPosition, FVector rightHandPosition, bool enableHandIK, ERopeInputState ropeInputState) : MovementInput(movementInput), 
+		CharacterMovementState(characterMovementState), CurrRotationDirection(currRotateDirection), NextRotationDirection(nextRotateDirection), CharacterGait(characterGait), 
+		TargetCharacterRotation(targetCharacterRotation), NextTargetCharacterRotation(nextTargetCharacterRotation), CurrCharacterRotation(currCharacterRotation), CurrCameraRotation(currCameraRotation), 
+		CurrCharacterSpeed(currCharacterSpeed), TargetCharacterSpeed(targetCharacterSpeed), LeftHandPosition(leftHandPosition), RightHandPosition(rightHandPosition), EnableHandIK(enableHandIK), RopeInputState(ropeInputState) {}
 };
 
 USTRUCT(BlueprintType)

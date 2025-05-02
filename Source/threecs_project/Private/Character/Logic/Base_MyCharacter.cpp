@@ -36,6 +36,7 @@ void ABase_MyCharacter::BeginPlay()
 	if (skeletonMesh)
 		MainAnimInstance = skeletonMesh->GetAnimInstance();
 
+	CurrCharacterState.MovementInput = FVector2D::Zero();
 	CurrCharacterState.CharacterMovementState = ECharacterMovementState::IDLE;
 	CurrCharacterState.CharacterGait = ECharacterGait::WALK;
 	CurrCharacterState.CurrRotationDirection = ERotateDirection::NONE;
@@ -134,15 +135,27 @@ void ABase_MyCharacter::OnCharacterMovementTriggered(const FInputActionInstance&
 
 void ABase_MyCharacter::Move(float deltaTime)
 {
-	FRotator characterRotation{ 0, CurrCharacterState.CurrCameraRotation.Yaw, 0 };
-	
-	FVector forwardDirection = UKismetMathLibrary::GetForwardVector(characterRotation);
-	float forwardMovementAmount = CurrCharacterState.MovementInput.Y * CurrCharacterState.CurrCharacterSpeed;
-	AddMovementInput(forwardDirection, forwardMovementAmount);
+	if (CurrCharacterState.MovementInput.IsZero())
+	{
+		// let character decelerate if movement input is not detected, going along previous movement direction
+		FRotator characterRotation{ 0, CurrCharacterState.CurrCharacterRotation.Yaw, 0 };
+		
+		FVector forwardDirection = UKismetMathLibrary::GetForwardVector(characterRotation);
+		float forwardMovementAmount = CurrCharacterState.CurrCharacterSpeed;
+		AddMovementInput(forwardDirection, forwardMovementAmount);
+	}
+	else
+	{
+		FRotator characterRotation{ 0, CurrCharacterState.CurrCameraRotation.Yaw, 0 };
 
-	FVector rightDirection = UKismetMathLibrary::GetRightVector(characterRotation);
-	float rightMovementAmount = CurrCharacterState.MovementInput.X * CurrCharacterState.CurrCharacterSpeed;
-	AddMovementInput(rightDirection, rightMovementAmount);
+		FVector forwardDirection = UKismetMathLibrary::GetForwardVector(characterRotation);
+		float forwardMovementAmount = CurrCharacterState.MovementInput.Y * CurrCharacterState.CurrCharacterSpeed;
+		AddMovementInput(forwardDirection, forwardMovementAmount);
+
+		FVector rightDirection = UKismetMathLibrary::GetRightVector(characterRotation);
+		float rightMovementAmount = CurrCharacterState.MovementInput.X * CurrCharacterState.CurrCharacterSpeed;
+		AddMovementInput(rightDirection, rightMovementAmount);
+	}
 }
 
 void ABase_MyCharacter::OnCharacterMovementComplete(const FInputActionInstance& _)
@@ -179,6 +192,9 @@ void ABase_MyCharacter::SetTargetCharacterMovementSpeed()
 
 float ABase_MyCharacter::GetMovementRotation() const
 {
+	if (CurrCharacterState.MovementInput.IsZero())
+		return 0;
+
 	const float dotProduct = FVector2D{ 0, 1 }.Dot(CurrCharacterState.MovementInput);
 	float movementRotation = FMath::Acos(dotProduct) * (180 / PI);
 	if (CurrCharacterState.MovementInput.X < 0)
@@ -195,11 +211,13 @@ void ABase_MyCharacter::OnMovementModeChanged(EMovementMode prevMovementMode, ui
 
 	if (prevMovementMode == EMovementMode::MOVE_Falling)
 	{
-		if (CurrCharacterState.MovementInput != FVector2D::Zero())
+		if (!CurrCharacterState.MovementInput.IsZero())
 			CurrCharacterState.CharacterMovementState = ECharacterMovementState::MOVING;
 		else
 			CurrCharacterState.CharacterMovementState = ECharacterMovementState::IDLE;
 	}
+
+	SetTargetCharacterMovementSpeed();
 }
 
 void ABase_MyCharacter::OnCharacterJump(const FInputActionInstance& _)
@@ -523,8 +541,12 @@ void ABase_MyCharacter::Tick(float deltaTime)
 	{
 		CurrCharacterState.TargetCharacterRotation = CurrCharacterState.NextTargetCharacterRotation;
 		CurrCharacterState.CurrRotationDirection = CurrCharacterState.NextRotationDirection;
-		UpdateCharacterMovingRotation(deltaTime);
-		SetActorRotation(CurrCharacterState.CurrCharacterRotation);
+
+		if (!CurrCharacterState.MovementInput.IsZero())
+		{	
+			UpdateCharacterMovingRotation(deltaTime);
+			SetActorRotation(CurrCharacterState.CurrCharacterRotation);
+		}
 	}
 
 	if (CurrCharacterState.CharacterMovementState != ECharacterMovementState::SWINGING)
